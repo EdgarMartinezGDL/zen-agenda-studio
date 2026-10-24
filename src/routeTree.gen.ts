@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BillingRouteImport } from './routes/billing'
+import { Route as EventosRouteImport } from './routes/eventos'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as NegocioRouteImport } from './routes/negocio'
+import { Route as PausadosRouteImport } from './routes/pausados'
+import { Route as ReportesRouteImport } from './routes/reportes'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminCalidadRouteImport } from './routes/admin/calidad'
+import { Route as AdminDemosRouteImport } from './routes/admin/demos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BillingRoute = BillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventosRoute = EventosRouteImport.update({
+  id: '/eventos',
+  path: '/eventos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NegocioRoute = NegocioRouteImport.update({
+  id: '/negocio',
+  path: '/negocio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PausadosRoute = PausadosRouteImport.update({
+  id: '/pausados',
+  path: '/pausados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportesRoute = ReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCalidadRoute = AdminCalidadRouteImport.update({
+  id: '/admin/calidad',
+  path: '/admin/calidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDemosRoute = AdminDemosRouteImport.update({
+  id: '/admin/demos',
+  path: '/admin/demos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/eventos': typeof EventosRoute
+  '/login': typeof LoginRoute
+  '/negocio': typeof NegocioRoute
+  '/pausados': typeof PausadosRoute
+  '/reportes': typeof ReportesRoute
+  '/admin/calidad': typeof AdminCalidadRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/eventos': typeof EventosRoute
+  '/login': typeof LoginRoute
+  '/negocio': typeof NegocioRoute
+  '/pausados': typeof PausadosRoute
+  '/reportes': typeof ReportesRoute
+  '/admin/calidad': typeof AdminCalidadRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/billing': typeof BillingRoute
+  '/eventos': typeof EventosRoute
+  '/login': typeof LoginRoute
+  '/negocio': typeof NegocioRoute
+  '/pausados': typeof PausadosRoute
+  '/reportes': typeof ReportesRoute
+  '/admin/calidad': typeof AdminCalidadRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/billing'
+    | '/eventos'
+    | '/login'
+    | '/negocio'
+    | '/pausados'
+    | '/reportes'
+    | '/admin/calidad'
+    | '/admin/demos'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/billing'
+    | '/eventos'
+    | '/login'
+    | '/negocio'
+    | '/pausados'
+    | '/reportes'
+    | '/admin/calidad'
+    | '/admin/demos'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/billing'
+    | '/eventos'
+    | '/login'
+    | '/negocio'
+    | '/pausados'
+    | '/reportes'
+    | '/admin/calidad'
+    | '/admin/demos'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BillingRoute: typeof BillingRoute
+  EventosRoute: typeof EventosRoute
+  LoginRoute: typeof LoginRoute
+  NegocioRoute: typeof NegocioRoute
+  PausadosRoute: typeof PausadosRoute
+  ReportesRoute: typeof ReportesRoute
+  AdminCalidadRoute: typeof AdminCalidadRoute
+  AdminDemosRoute: typeof AdminDemosRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/billing': {
+      id: '/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventos': {
+      id: '/eventos'
+      path: '/eventos'
+      fullPath: '/eventos'
+      preLoaderRoute: typeof EventosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/negocio': {
+      id: '/negocio'
+      path: '/negocio'
+      fullPath: '/negocio'
+      preLoaderRoute: typeof NegocioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pausados': {
+      id: '/pausados'
+      path: '/pausados'
+      fullPath: '/pausados'
+      preLoaderRoute: typeof PausadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reportes': {
+      id: '/reportes'
+      path: '/reportes'
+      fullPath: '/reportes'
+      preLoaderRoute: typeof ReportesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/calidad': {
+      id: '/admin/calidad'
+      path: '/admin/calidad'
+      fullPath: '/admin/calidad'
+      preLoaderRoute: typeof AdminCalidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/demos': {
+      id: '/admin/demos'
+      path: '/admin/demos'
+      fullPath: '/admin/demos'
+      preLoaderRoute: typeof AdminDemosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BillingRoute: BillingRoute,
+  EventosRoute: EventosRoute,
+  LoginRoute: LoginRoute,
+  NegocioRoute: NegocioRoute,
+  PausadosRoute: PausadosRoute,
+  ReportesRoute: ReportesRoute,
+  AdminCalidadRoute: AdminCalidadRoute,
+  AdminDemosRoute: AdminDemosRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
