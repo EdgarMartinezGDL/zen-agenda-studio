@@ -1,6 +1,6 @@
 # Avisos de cobro
 - [x] Agregar tipos, API, campana y Avisos del Súper Panel según el archivo recibido.
-- [ ] Verificar contrato, permisos y marcado como leído con pruebas.
+- [x] Verificar contrato, permisos y marcado como leído: 68 pruebas aprobadas; /admin/avisos redirige sin sesión a /login, sin errores.
 - [ ] Verificar avisos reales: falta dirección pública del servidor MicroFix Cloud y sesiones profesional y Súper Admin.
 
 # Pantallas del profesional
