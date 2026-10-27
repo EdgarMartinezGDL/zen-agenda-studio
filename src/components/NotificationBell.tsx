@@ -118,7 +118,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
         <Button variant="ghost"
           onClick={() => setOpen(true)}
           aria-label={label}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="flex h-auto w-full items-center gap-2 whitespace-normal rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <Bell className="h-4 w-4 text-gold" />
           <span className="flex-1 text-left">Notificaciones</span>
@@ -132,7 +132,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
         <Button variant="ghost"
           onClick={() => setOpen(true)}
           aria-label={label}
-          className="relative mr-1 overflow-visible rounded-md px-1.5 pb-1 pt-2 text-foreground transition-colors hover:bg-accent"
+          className="relative mr-1 h-auto overflow-visible rounded-md px-1.5 pb-1 pt-2 text-foreground transition-colors hover:bg-accent [&_svg]:size-6"
         >
           <Bell className="h-6 w-6" />
           {badge}
@@ -153,7 +153,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
               <Button variant="ghost"
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar notificaciones"
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="h-auto rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground [&_svg]:size-5"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -173,7 +173,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
                       <li key={n.id}>
                         <Button variant="ghost"
                           onClick={() => openNotification(n)}
-                          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent ${
+                          className={`flex h-auto w-full items-start gap-3 whitespace-normal px-4 py-3 text-left transition-colors hover:bg-accent [&_svg]:size-5 ${
                             n.read ? "" : "bg-primary/5"
                           }`}
                         >
@@ -197,7 +197,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
                   <Button variant="ghost"
                     onClick={() => list.fetchNextPage()}
                     disabled={list.isFetchingNextPage}
-                    className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
+                    className="h-auto whitespace-normal rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
                   >
                     {list.isFetchingNextPage ? "Cargando…" : "Ver más"}
                   </Button>
