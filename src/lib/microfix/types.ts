@@ -422,13 +422,17 @@ export interface ApiErrorBody {
 // --- Centro de Notificaciones ---------------------------------------------------
 
 /** created = cita nueva; cancelled = cancelada; rescheduled = reagendada. */
-export type NotificationType = 'created' | 'cancelled' | 'rescheduled';
+export type NotificationType = 'created' | 'cancelled' | 'rescheduled' | 'billing';
+
+/** Aviso de cobro (Fase 6, 6.5): solo en type 'billing'. */
+export type BillingNoticeKind = 'PAYMENT_FAILED' | 'SUSPENSION_TOMORROW' | 'ACCOUNT_SUSPENDED' | 'PAYMENT_RECEIVED';
 
 /** Elemento de GET /notifications. Textos ya armados en la zona de la sede. */
 export interface AppNotification {
   id: string;
   type: NotificationType;
-  appointmentId: string;
+  billingKind?: BillingNoticeKind; // solo en 'billing'
+  appointmentId: string | null; // null en 'billing'
   createdAt: string; // ISO UTC: cuándo ocurrió
   read: boolean;
   readAt: string | null;
@@ -643,4 +647,26 @@ export interface KnowledgeDocument {
 export interface KnowledgeDocumentList {
   documents: KnowledgeDocument[];
   usage: { documents: number; maxDocuments: number; bytes: number; maxBytes: number };
+}
+
+// --- Súper Panel: avisos de cuentas suspendidas (Fase 6, 6.5) -------------------
+
+/** Elemento de GET /admin/billing-notices: una clínica que pasó a SUSPENDED. */
+export interface AdminBillingNotice {
+  id: string;
+  kind: BillingNoticeKind; // hoy siempre ACCOUNT_SUSPENDED
+  organizationId: string;
+  organizationName: string;
+  title: string;
+  message: string; // "Clínica X quedó suspendida. Su asistente virtual dejó de atender a sus pacientes."
+  createdAt: string;
+  read: boolean;
+  readAt: string | null;
+}
+
+/** GET /admin/billing-notices?limit=&cursor= — más recientes primero. */
+export interface AdminBillingNoticePage {
+  items: AdminBillingNotice[];
+  nextCursor: string | null; // null = no hay más
+  unreadCount: number; // de todos los avisos, no solo de esta página
 }

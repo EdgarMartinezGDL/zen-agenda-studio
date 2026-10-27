@@ -1,3 +1,8 @@
+# Avisos de cobro
+- [x] Agregar tipos, API, campana y Avisos del Súper Panel según el archivo recibido.
+- [ ] Verificar contrato, permisos y marcado como leído con pruebas.
+- [ ] Verificar avisos reales: falta dirección pública del servidor MicroFix Cloud y sesiones profesional y Súper Admin.
+
 # Pantallas del profesional
 - [x] Agregar conversaciones en pausa, Mi plan y Documentos según el contrato, manteniendo cuatro opciones inferiores.
 - [x] Verificar 54 pruebas aprobadas: contrato, límite de 20 MB, bloqueo por plan, pausa/reanudación, FormData y destino push; vista previa sin errores y acceso protegido a /pausados y /negocio.

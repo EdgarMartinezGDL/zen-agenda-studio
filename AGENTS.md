@@ -17,3 +17,5 @@
 - Demo management lives in the AdminShell-protected /admin/demos route and uses adminApi exclusively; QR polling stays scoped to its dialog, and conversion credentials remain transient form state to avoid browser persistence.
 
 - Professional plan and documents use organizationApi/knowledgeApi, and paused conversations use pausedApi within AppShell; query keys are organization-scoped so plan gating and refreshes share one source of truth.
+
+- Billing notices use notificationsApi in the professional bell and adminApi inside AdminShell for /admin/avisos; keep their queries separate because the sessions have different scopes.
