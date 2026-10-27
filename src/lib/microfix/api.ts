@@ -7,7 +7,7 @@
 
 import { apiRequest } from './client';
 import type {
-  AdminDemo, ConvertDemoInput, CreateDemoInput, DemoCancelResult, DemoConvertResult, DemoQrResult,
+  AdminBillingNoticePage, AdminDemo, ConvertDemoInput, CreateDemoInput, DemoCancelResult, DemoConvertResult, DemoQrResult,
   AdminOrganization, AiPauseResult, AiUsageReport, PlanChangeResult, PlanFeatures, VerifierRejection,
   AISettings,
   AppointmentStatus,
@@ -439,6 +439,12 @@ export const adminApi = {
   /** Solo ACTIVE, EXPIRED o CANCELLED. 409 si el WABA ya es de otra organización. */
   convertDemo: (demoId: string, input: ConvertDemoInput) =>
     apiRequest<DemoConvertResult>(`/demos/${demoId}/convert`, { method: 'POST', body: input }),
+  /** Avisos de clínicas suspendidas (6.5): más recientes primero, con unreadCount. limit 1–50. */
+  billingNotices: (params: { limit?: number | undefined; cursor?: string | undefined } = {}) =>
+    apiRequest<AdminBillingNoticePage>(`/admin/billing-notices${qs(params)}`),
+  /** Idempotente. */
+  markBillingNoticeRead: (id: string) =>
+    apiRequest<{ id: string; read: true; readAt: string }>(`/admin/billing-notices/${id}/read`, { method: 'PATCH' }),
 };
 
 // --- Conversaciones en pausa (Fase 5, 5.6.5) ---------------------------------

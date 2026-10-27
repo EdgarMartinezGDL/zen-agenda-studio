@@ -17,6 +17,7 @@ import { Route as NegocioRouteImport } from './routes/negocio'
 import { Route as PausadosRouteImport } from './routes/pausados'
 import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAvisosRouteImport } from './routes/admin/avisos'
 import { Route as AdminCalidadRouteImport } from './routes/admin/calidad'
 import { Route as AdminDemosRouteImport } from './routes/admin/demos'
 
@@ -60,6 +61,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAvisosRoute = AdminAvisosRouteImport.update({
+  id: '/admin/avisos',
+  path: '/admin/avisos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCalidadRoute = AdminCalidadRouteImport.update({
   id: '/admin/calidad',
   path: '/admin/calidad',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/negocio': typeof NegocioRoute
   '/pausados': typeof PausadosRoute
   '/reportes': typeof ReportesRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin/': typeof AdminIndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/negocio': typeof NegocioRoute
   '/pausados': typeof PausadosRoute
   '/reportes': typeof ReportesRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin': typeof AdminIndexRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/negocio': typeof NegocioRoute
   '/pausados': typeof PausadosRoute
   '/reportes': typeof ReportesRoute
+  '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin/': typeof AdminIndexRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/negocio'
     | '/pausados'
     | '/reportes'
+    | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
     | '/admin/'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/negocio'
     | '/pausados'
     | '/reportes'
+    | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
     | '/admin'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/negocio'
     | '/pausados'
     | '/reportes'
+    | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
     | '/admin/'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   NegocioRoute: typeof NegocioRoute
   PausadosRoute: typeof PausadosRoute
   ReportesRoute: typeof ReportesRoute
+  AdminAvisosRoute: typeof AdminAvisosRoute
   AdminCalidadRoute: typeof AdminCalidadRoute
   AdminDemosRoute: typeof AdminDemosRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/avisos': {
+      id: '/admin/avisos'
+      path: '/admin/avisos'
+      fullPath: '/admin/avisos'
+      preLoaderRoute: typeof AdminAvisosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/calidad': {
       id: '/admin/calidad'
       path: '/admin/calidad'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   NegocioRoute: NegocioRoute,
   PausadosRoute: PausadosRoute,
   ReportesRoute: ReportesRoute,
+  AdminAvisosRoute: AdminAvisosRoute,
   AdminCalidadRoute: AdminCalidadRoute,
   AdminDemosRoute: AdminDemosRoute,
   AdminIndexRoute: AdminIndexRoute,

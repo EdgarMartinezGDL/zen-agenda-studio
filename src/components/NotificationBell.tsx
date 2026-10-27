@@ -1,8 +1,10 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, CalendarClock, CalendarPlus, CalendarX, X } from "lucide-react";
+import { BadgeCheck, Ban, Bell, CalendarClock, CalendarPlus, CalendarX, CreditCard, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+
+import { Button } from "@/components/ui/button";
 
 import { notificationsApi } from "@/lib/microfix/api";
 import type { AppNotification } from "@/lib/microfix/types";
@@ -13,6 +15,20 @@ const ICON_CLASS = {
   cancelled: "text-status-cancelled",
   rescheduled: "text-gold",
 } as const;
+// Avisos de cobro (Fase 6, 6.5): ícono según billingKind.
+const BILLING_ICON = {
+  PAYMENT_FAILED: { Icon: CreditCard, className: "text-destructive" },
+  SUSPENSION_TOMORROW: { Icon: TriangleAlert, className: "text-gold" },
+  ACCOUNT_SUSPENDED: { Icon: Ban, className: "text-destructive" },
+  PAYMENT_RECEIVED: { Icon: BadgeCheck, className: "text-status-confirmed" },
+} as const;
+
+// Un tipo que la app aún no conoce no rompe la lista: campana genérica.
+function iconOf(n: AppNotification) {
+  if (n.type === "billing") return (n.billingKind && BILLING_ICON[n.billingKind]) || { Icon: Bell, className: "text-gold" };
+  if (n.type in ICON) return { Icon: ICON[n.type], className: ICON_CLASS[n.type] };
+  return { Icon: Bell, className: "text-gold" };
+}
 
 // "AAAA-MM-DD" del día de la cita en la hora local (la agenda también usa la local).
 const localDay = (iso: string) => {
@@ -79,6 +95,8 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
 
   const openNotification = (n: AppNotification) => {
     if (!n.read) markRead.mutate(n.id);
+    // Un aviso de cobro solo se marca como leído: no lleva a ninguna cita.
+    if (n.type === "billing") return;
     setOpen(false);
     if (n.startAt) navigate({ to: "/", search: { dia: localDay(n.startAt) } });
   };
@@ -97,7 +115,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
   return (
     <>
       {full ? (
-        <button
+        <Button variant="ghost"
           onClick={() => setOpen(true)}
           aria-label={label}
           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -109,16 +127,16 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
               {count > 99 ? "99+" : count}
             </span>
           )}
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button variant="ghost"
           onClick={() => setOpen(true)}
           aria-label={label}
           className="relative mr-1 overflow-visible rounded-md px-1.5 pb-1 pt-2 text-foreground transition-colors hover:bg-accent"
         >
           <Bell className="h-6 w-6" />
           {badge}
-        </button>
+        </Button>
       )}
 
       {/* En <body>: dentro de la cabecera o la barra lateral quedaría atrapado en su capa. */}
@@ -132,13 +150,13 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-base font-bold">Notificaciones</h2>
-              <button
+              <Button variant="ghost"
                 onClick={() => setOpen(false)}
                 aria-label="Cerrar notificaciones"
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
               {list.isLoading ? (
@@ -150,16 +168,16 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
               ) : (
                 <ul className="divide-y divide-border">
                   {items.map((n) => {
-                    const Icon = ICON[n.type];
+                    const { Icon, className: iconClass } = iconOf(n);
                     return (
                       <li key={n.id}>
-                        <button
+                        <Button variant="ghost"
                           onClick={() => openNotification(n)}
                           className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent ${
                             n.read ? "" : "bg-primary/5"
                           }`}
                         >
-                          <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${ICON_CLASS[n.type]}`} />
+                          <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconClass}`} />
                           <span className="min-w-0 flex-1">
                             <span className={`block text-sm ${n.read ? "font-medium text-muted-foreground" : "font-bold text-foreground"}`}>
                               {n.title}
@@ -168,7 +186,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
                             <span className="mt-1 block text-xs text-muted-foreground">{ago(n.createdAt)}</span>
                           </span>
                           {!n.read && <span aria-label="Sin leer" className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />}
-                        </button>
+                        </Button>
                       </li>
                     );
                   })}
@@ -176,13 +194,13 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
               )}
               {list.hasNextPage && (
                 <div className="p-3 text-center">
-                  <button
+                  <Button variant="ghost"
                     onClick={() => list.fetchNextPage()}
                     disabled={list.isFetchingNextPage}
                     className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
                   >
                     {list.isFetchingNextPage ? "Cargando…" : "Ver más"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

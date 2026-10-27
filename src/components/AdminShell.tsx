@@ -1,11 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Building2, LogOut, Moon, QrCode, ShieldCheck, Sun } from "lucide-react";
+import { BellRing, Building2, LogOut, Moon, QrCode, ShieldCheck, Sun } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 
 import { Brand } from "@/components/Brand";
 import { Confirm } from "@/components/Confirm";
+import { adminApi } from "@/lib/microfix/api";
 import { useAuth } from "@/lib/microfix/auth";
 import { useTheme } from "@/lib/theme";
 
@@ -15,6 +17,7 @@ const NAV = [
   { to: "/admin", label: "Organizaciones", icon: Building2 },
   { to: "/admin/demos", label: "Demos", icon: QrCode },
   { to: "/admin/calidad", label: "Calidad IA", icon: ShieldCheck },
+  { to: "/admin/avisos", label: "Avisos", icon: BellRing },
 ] as const;
 
 function ThemeToggle({ full = false }: { full?: boolean }) {
@@ -40,6 +43,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { user, ready, logout: endSession } = useAuth();
   const isAdmin = user?.role === "SUPER_ADMIN";
   const [logoutOpen, setLogoutOpen] = useState(false);
+
+  // Fase 6, 6.5: avisos de clínicas suspendidas sin leer (globito en "Avisos").
+  const { data: notices } = useQuery({
+    queryKey: ["admin", "billing-notices-unread"],
+    queryFn: () => adminApi.billingNotices({ limit: 1 }),
+    enabled: ready && isAdmin,
+    refetchInterval: 30_000,
+  });
+  const unread = notices?.unreadCount ?? 0;
+  const unreadBadge = (to: string) =>
+    to === "/admin/avisos" && unread > 0 ? (
+      <span
+        aria-label={`${unread} sin leer`}
+        className="rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none tabular-nums text-destructive-foreground"
+      >
+        {unread > 99 ? "99+" : unread}
+      </span>
+    ) : null;
 
   useEffect(() => {
     if (!ready) return;
@@ -83,7 +104,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
               }`}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {unreadBadge(to)}
             </Link>
           ))}
         </nav>
@@ -121,17 +143,22 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <main className="px-4 pt-4 pb-28 md:ml-64 md:px-8 md:py-8">{children}</main>
 
       {/* Bottom nav móvil */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
         {NAV.map(({ to, label, icon: Icon }) => (
           <Link
             key={to}
             to={to}
-            className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+            className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
               isActive(to) ? "text-primary" : "text-muted-foreground"
             }`}
           >
             <Icon className="h-5 w-5" />
             {label}
+            {to === "/admin/avisos" && unread > 0 && (
+              <span className="absolute left-1/2 top-1 ml-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none tabular-nums text-destructive-foreground">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
