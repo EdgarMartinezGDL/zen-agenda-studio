@@ -1,6 +1,6 @@
 # Pagos del Súper Panel
-- [ ] Agregar Clínicas, Precios y Códigos, menú de cinco opciones y prorrateo según el archivo entregado.
-- [ ] Verificar contratos, permisos, límites y acciones con pruebas.
+- [x] Agregar Clínicas, Precios y Códigos, menú de cinco opciones y prorrateo según el archivo entregado.
+- [x] Verificar contratos, permisos, límites y acciones: 98 pruebas aprobadas; /admin/pagos exige iniciar sesión, sin errores de ejecución.
 - [ ] Verificar pagos reales: falta dirección pública de MicroFix Cloud y sesión del Súper Admin.
 
 # Mi plan (Stripe)

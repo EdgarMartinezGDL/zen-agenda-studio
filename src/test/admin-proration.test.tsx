@@ -29,9 +29,9 @@ describe("Stripe plan change financial results", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }); clients.push(client);
     render(<QueryClientProvider client={client}><Page /></QueryClientProvider>);
     fireEvent.change(await screen.findByLabelText("Cambiar plan"), { target: { value: "PREMIUM" } });
-    fireEvent.click(screen.getByRole("button", { name: "Cambiar", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Cambiar$/ }));
     expect(state.changePlan).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Sí, cambiar", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^Sí, cambiar$/ }));
     expect(await screen.findByText(expected)).toBeTruthy();
     expect(state.changePlan).toHaveBeenCalledWith("org-1", "PREMIUM");
   });
