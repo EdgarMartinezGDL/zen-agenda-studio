@@ -19,3 +19,4 @@
 - Professional plan and documents use organizationApi/knowledgeApi, and paused conversations use pausedApi within AppShell; query keys are organization-scoped so plan gating and refreshes share one source of truth.
 
 - Billing notices use notificationsApi in the professional bell and adminApi inside AdminShell for /admin/avisos; keep their queries separate because the sessions have different scopes.
+- Super-admin payments use adminBillingApi inside AdminShell at /admin/pagos with admin-scoped queries; MicroFix Cloud owns Stripe operations and validation so no payment logic or private credentials are duplicated in the frontend.
