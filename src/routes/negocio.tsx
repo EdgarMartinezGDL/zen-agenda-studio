@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Copy, MapPin, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import { DocumentsTab } from "@/components/DocumentsTab";
 import { PlanCard } from "@/components/PlanCard";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { Banner } from "@/components/Banner";
 import { Modal } from "@/components/Modal";
 import { Confirm } from "@/components/Confirm";
@@ -38,7 +39,18 @@ import type {
   Service,
 } from "@/types";
 
+// Fase 6, 6.6: ?seccion=plan abre "Mi plan"; ?pago=exito|cancelado es el
+// regreso del pago de Stripe.
+type NegocioSearch = { seccion?: "plan"; pago?: "exito" | "cancelado" };
+
 export const Route = createFileRoute("/negocio")({
+  validateSearch: (search: Record<string, unknown>): NegocioSearch => {
+    const pago = search["pago"];
+    return {
+      ...(search["seccion"] === "plan" ? { seccion: "plan" as const } : {}),
+      ...(pago === "exito" || pago === "cancelado" ? { pago } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { property: "og:type", content: "website" },
@@ -67,8 +79,26 @@ type Tab = (typeof TABS)[number];
 
 
 function NegocioPage() {
-  const [tab, setTab] = useState<Tab>("Ubicaciones");
+  const { seccion, pago } = Route.useSearch();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<Tab>(seccion || pago ? "Configuración" : "Ubicaciones");
+  const [confirming, setConfirming] = useState(false);
   const orgId = useAuth().user?.organizationId ?? "";
+
+  // "Mi plan" vive en Configuración: se abre esa pestaña y se baja hasta la tarjeta.
+  useEffect(() => {
+    if (!seccion && !pago) return;
+    setTab("Configuración");
+    if (pago === "exito") {
+      setConfirming(true);
+      toast.success("¡Gracias! Estamos confirmando tu pago…");
+    } else if (pago === "cancelado") {
+      toast.info("No se realizó ningún cobro.");
+    }
+    const t = setTimeout(() => document.getElementById("mi-plan")?.scrollIntoView({ behavior: "smooth" }), 300);
+    navigate({ to: "/negocio", search: {}, replace: true });
+    return () => clearTimeout(t);
+  }, [seccion, pago, navigate]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -95,7 +125,7 @@ function NegocioPage() {
       {tab === "Horarios" && <HoursTab orgId={orgId} />}
       {tab === "Cupo" && <SlotsTab orgId={orgId} />}
       {tab === "Documentos" && <DocumentsTab orgId={orgId} />}
-      {tab === "Configuración" && <SettingsTab orgId={orgId} />}
+      {tab === "Configuración" && <SettingsTab orgId={orgId} confirming={confirming} />}
     </div>
   );
 }
@@ -1382,7 +1412,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
 
 /* ---------------- Configuración ---------------- */
 
-function SettingsTab({ orgId }: { orgId: string }) {
+function SettingsTab({ orgId, confirming }: { orgId: string; confirming: boolean }) {
   const [open, setOpen] = useState<null | "ia" | "marca" | "politica" | "cuenta">(null);
 
   const cards = [
@@ -1406,6 +1436,7 @@ function SettingsTab({ orgId }: { orgId: string }) {
         ))}
       </CardList>
 
+      <SubscriptionCard orgId={orgId} confirming={confirming} />
       <PlanCard orgId={orgId} />
       <PushNotificationsCard orgId={orgId} />
 

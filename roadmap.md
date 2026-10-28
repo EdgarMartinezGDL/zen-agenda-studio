@@ -1,3 +1,7 @@
+# Mi plan (Stripe)
+- [x] Agregar Mi plan, aviso de cuenta suspendida/cobro pendiente, campana y push según el archivo; 68 pruebas aprobadas.
+- [ ] Verificar pago real con Stripe: falta dirección pública del servidor MicroFix Cloud y sesión profesional.
+
 # Avisos de cobro
 - [x] Agregar tipos, API, campana y Avisos del Súper Panel según el archivo recibido.
 - [x] Verificar contrato, permisos y marcado como leído: 68 pruebas aprobadas; /admin/avisos redirige sin sesión a /login, sin errores.

@@ -425,7 +425,12 @@ export interface ApiErrorBody {
 export type NotificationType = 'created' | 'cancelled' | 'rescheduled' | 'billing';
 
 /** Aviso de cobro (Fase 6, 6.5): solo en type 'billing'. */
-export type BillingNoticeKind = 'PAYMENT_FAILED' | 'SUSPENSION_TOMORROW' | 'ACCOUNT_SUSPENDED' | 'PAYMENT_RECEIVED';
+export type BillingNoticeKind =
+  | 'PAYMENT_FAILED'
+  | 'SUSPENSION_TOMORROW'
+  | 'ACCOUNT_SUSPENDED'
+  | 'PAYMENT_RECEIVED'
+  | 'PRICE_CHANGED';
 
 /** Elemento de GET /notifications. Textos ya armados en la zona de la sede. */
 export interface AppNotification {
@@ -669,4 +674,50 @@ export interface AdminBillingNoticePage {
   items: AdminBillingNotice[];
   nextCursor: string | null; // null = no hay más
   unreadCount: number; // de todos los avisos, no solo de esta página
+}
+
+// --- "Mi plan" del profesional (Fase 6, 6.6) ------------------------------------
+
+export type SubscriptionStatus = 'ACTIVE' | 'PAST_DUE' | 'SUSPENDED';
+export type BillingCycle = 'MONTHLY' | 'YEARLY';
+/** CHECKOUT = contratar o reactivar; UPDATE_PAYMENT_METHOD = regularizar en el Portal; NONE = nada. */
+export type BillingAction = 'NONE' | 'UPDATE_PAYMENT_METHOD' | 'CHECKOUT';
+
+/** GET /billing/:org/summary */
+export interface BillingSummary {
+  status: SubscriptionStatus | null; // null = sin plan de pago (demo o nada)
+  planCode: string | null;
+  billingCycle: BillingCycle | null;
+  paymentMethod: string | null;
+  managedByStripe: boolean;
+  canOpenPortal: boolean;
+  currentPeriodEnd: string | null; // pagado hasta (ISO)
+  pastDueSince: string | null;
+  suspendsAt: string | null; // solo PAST_DUE: cuándo se suspende
+  suspendedAt: string | null;
+  lastPayment: { amountCents: number; currency: string; paidAt: string | null } | null;
+  action: BillingAction;
+}
+
+/** Elemento de GET /billing/:org/payments (más recientes primero). */
+export interface BillingPayment {
+  id: string;
+  status: 'PAID' | 'FAILED';
+  amountCents: number;
+  currency: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  paidAt: string | null;
+  failureReason: string | null;
+  failureText: string | null; // solo FAILED: texto listo para mostrar
+  invoiceUrl: string | null;
+  createdAt: string;
+}
+
+/** Elemento de GET /billing/prices (precios vigentes). */
+export interface BillingPrice {
+  planCode: string;
+  billingCycle: BillingCycle;
+  currency: string;
+  amountCents: number;
 }
