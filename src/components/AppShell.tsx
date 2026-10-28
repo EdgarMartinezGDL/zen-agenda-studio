@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { BusinessBrand, PlatformSeal } from "@/components/Brand";
 import { Confirm } from "@/components/Confirm";
 import { NotificationBell } from "@/components/NotificationBell";
+import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { organizationApi } from "@/lib/microfix/api";
 import { useAuth } from "@/lib/microfix/auth";
 import { disablePushOnLogout, refreshPush, registerServiceWorker } from "@/lib/microfix/push";
@@ -200,7 +201,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="px-4 pt-4 pb-28 md:ml-64 md:px-8 md:py-8">{children}</main>
+      <main className="px-4 pt-4 pb-28 md:ml-64 md:px-8 md:py-8">
+        {orgId && !isAdmin && <SubscriptionBanner orgId={orgId} />}
+        {children}
+      </main>
 
       {/* Bottom nav móvil */}
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">

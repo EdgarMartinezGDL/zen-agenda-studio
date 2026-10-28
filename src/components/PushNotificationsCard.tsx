@@ -1,16 +1,27 @@
+import { useQuery } from "@tanstack/react-query";
 import { Bell, BellOff, Share, SquarePlus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/Banner";
 import { ApiError } from "@/lib/microfix/client";
-import { pushApi } from "@/lib/microfix/api";
+import { organizationApi, pushApi } from "@/lib/microfix/api";
+import { useBillingSummary } from "@/components/SubscriptionCard";
 import { disablePush, enablePush, getPushState, type PushState } from "@/lib/microfix/push";
 import { errorText } from "@/lib/microfix-ui";
 
 // Avisos de cita nueva, cancelada o reagendada por WhatsApp y de pacientes en
 // pausa, en ESTE dispositivo (cada celular o computadora se activa aparte).
+// Fase 6, 6.6.6: cualquier plan (y la cuenta SUSPENDED) puede activarlo; sin
+// push en el plan o suspendida solo recibe los avisos de cobro.
 export function PushNotificationsCard({ orgId }: { orgId: string }) {
+  const { data: features } = useQuery({
+    queryKey: ["plan-features", orgId],
+    queryFn: () => organizationApi.planFeatures(orgId),
+    enabled: !!orgId,
+  });
+  const { data: billing } = useBillingSummary(orgId);
+  const billingOnly = features?.pushEnabled === false || billing?.status === "SUSPENDED";
   const [state, setState] = useState<PushState | null>(null);
   // El backend sin llaves VAPID responde 503: la tarjeta no se muestra.
   const [available, setAvailable] = useState(true);
@@ -68,8 +79,9 @@ export function PushNotificationsCard({ orgId }: { orgId: string }) {
         <div className="min-w-0 flex-1">
           <p className="font-semibold">Notificaciones en este dispositivo</p>
           <p className="text-xs text-muted-foreground">
-            Te avisamos al instante cuando un paciente agenda, cancela o reagenda por WhatsApp, o cuando
-            necesita que le respondas tú.
+            {billingOnly
+              ? "Te avisamos al instante sobre los cobros de tu plan: si un pago no pasa, si tu cuenta está por suspenderse y cuando recibimos tu pago."
+              : "Te avisamos al instante cuando un paciente agenda, cancela o reagenda por WhatsApp, o cuando necesita que le respondas tú."}
           </p>
         </div>
       </div>

@@ -38,19 +38,22 @@ export function PlanCard({ orgId }: { orgId: string }) {
     enabled: !!orgId,
   });
   // Lo que cuenta para el límite es solo lo activo (el contexto ya trae solo lo activo).
-  const { data: ctx } = useQuery({
+  // Con la cuenta SUSPENDED el contexto responde 402: se muestra "—".
+  const { data: ctx, isError: ctxError } = useQuery({
     queryKey: ["context", orgId],
     queryFn: () => organizationApi.context(orgId) as unknown as Promise<OrganizationContext>,
     enabled: !!orgId,
+    retry: false,
   });
 
+  const pending = ctxError ? "—" : "…";
   const locations = ctx?.locations?.length;
   const services = ctx?.services?.length;
 
   return (
     <section className="card-zen mt-4 p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="font-semibold">Mi plan</p>
+        <p className="font-semibold">Lo que incluye tu plan</p>
         <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold">
           {planName(f)}
         </span>
@@ -60,13 +63,13 @@ export function PlanCard({ orgId }: { orgId: string }) {
           <li className="flex items-center justify-between gap-3 py-1.5 text-sm">
             <span>Ubicaciones</span>
             <span className="font-semibold">
-              {locations ?? "…"} de {f.maxLocations}
+              {locations ?? pending} de {f.maxLocations}
             </span>
           </li>
           <li className="flex items-center justify-between gap-3 py-1.5 text-sm">
             <span>Servicios</span>
             <span className="font-semibold">
-              {services ?? "…"} de {f.maxServices ?? "ilimitados"}
+              {services ?? pending} de {f.maxServices ?? "ilimitados"}
             </span>
           </li>
           <Feature label="Eventos y talleres" on={f.eventsEnabled} />

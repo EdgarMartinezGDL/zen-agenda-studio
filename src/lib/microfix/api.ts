@@ -39,6 +39,7 @@ import type {
   Appointment,
   NotificationPage,
   ConversationModeChange, KnowledgeDocument, KnowledgeDocumentList, PausedConversation,
+  BillingCycle, BillingPayment, BillingPrice, BillingSummary,
 } from './types';
 
 const qs = (params: Record<string, string | number | boolean | undefined>) => {
@@ -473,4 +474,18 @@ export const knowledgeApi = {
   },
   remove: (orgId: string, id: string) =>
     apiRequest<{ deleted: true }>(`/knowledge/${orgId}/documents/${id}`, { method: 'DELETE' }),
+};
+
+// --- "Mi plan" (Fase 6, 6.6) -------------------------------------------------
+// Solo la persona con sesión de esa organización. Abierto con la cuenta SUSPENDED.
+
+export const billingApi = {
+  summary: (orgId: string) => apiRequest<BillingSummary>(`/billing/${orgId}/summary`),
+  payments: (orgId: string) => apiRequest<BillingPayment[]>(`/billing/${orgId}/payments`),
+  prices: () => apiRequest<BillingPrice[]>('/billing/prices'),
+  /** 201 { url } del pago de Stripe. 400 código de descuento no válido (mensaje listo), 409 no puede contratar, 503 sin pago en línea. */
+  checkout: (orgId: string, body: { planCode: string; billingCycle: BillingCycle; promoCode?: string }) =>
+    apiRequest<{ url: string }>(`/billing/${orgId}/checkout`, { method: 'POST', body }),
+  /** 201 { url } del Portal de Stripe. 409 sin método de pago, 503 sin pago en línea. */
+  portal: (orgId: string) => apiRequest<{ url: string }>(`/billing/${orgId}/portal`, { method: 'POST' }),
 };
