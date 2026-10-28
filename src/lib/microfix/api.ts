@@ -40,6 +40,7 @@ import type {
   NotificationPage,
   ConversationModeChange, KnowledgeDocument, KnowledgeDocumentList, PausedConversation,
   BillingCycle, BillingPayment, BillingPrice, BillingSummary,
+  AdminBillingOverview, AdminDiscount, AdminPrice, CreateDiscountInput, PriceChangeResult, SubscriptionStatus,
 } from './types';
 
 const qs = (params: Record<string, string | number | boolean | undefined>) => {
@@ -488,4 +489,29 @@ export const billingApi = {
     apiRequest<{ url: string }>(`/billing/${orgId}/checkout`, { method: 'POST', body }),
   /** 201 { url } del Portal de Stripe. 409 sin método de pago, 503 sin pago en línea. */
   portal: (orgId: string) => apiRequest<{ url: string }>(`/billing/${orgId}/portal`, { method: 'POST' }),
+};
+
+// --- Súper Panel: pagos (Fase 6, 6.6) -----------------------------------------
+// Solo el Súper Admin. Precios y códigos se aplican en Stripe (503 si Stripe falla).
+
+export const adminBillingApi = {
+  /** Totales por estado y lista (SUSPENDED → PAST_DUE → ACTIVE); status opcional para filtrar. */
+  subscriptions: (status?: SubscriptionStatus) =>
+    apiRequest<AdminBillingOverview>(`/admin/billing/subscriptions${qs({ status })}`),
+  /** Historial de cobros de una clínica (mismo formato que "Mi plan"). 404 si no existe. */
+  payments: (orgId: string) => apiRequest<BillingPayment[]>(`/admin/billing/${orgId}/payments`),
+  prices: () => apiRequest<AdminPrice[]>('/admin/billing/prices'),
+  /** 201. Aplica a todos desde su siguiente cobro (con aviso). 409 si es el mismo precio. */
+  createPrice: (body: { planCode: string; billingCycle: BillingCycle; amountCents: number }) =>
+    apiRequest<PriceChangeResult>('/admin/billing/prices', { method: 'POST', body }),
+  /** Reintenta pasar al precio vigente las suscripciones pendientes. 409 si el precio ya no está vigente. */
+  migratePrice: (id: string) =>
+    apiRequest<PriceChangeResult>(`/admin/billing/prices/${id}/migrate`, { method: 'POST' }),
+  discounts: () => apiRequest<AdminDiscount[]>('/admin/billing/discounts'),
+  /** 201. 400 con el motivo, 409 si el código ya existe. */
+  createDiscount: (body: CreateDiscountInput) =>
+    apiRequest<AdminDiscount>('/admin/billing/discounts', { method: 'POST', body }),
+  /** Idempotente. 404 si no existe. */
+  deactivateDiscount: (id: string) =>
+    apiRequest<AdminDiscount>(`/admin/billing/discounts/${id}/deactivate`, { method: 'POST' }),
 };

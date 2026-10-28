@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BellRing, Building2, LogOut, Moon, QrCode, ShieldCheck, Sun } from "lucide-react";
+import { BellRing, Building2, CreditCard, LogOut, Moon, QrCode, ShieldCheck, Sun } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,13 @@ import { useTheme } from "@/lib/theme";
 
 // Súper Panel (Fase 5, 5.6): marco solo para el Súper Admin. Su sesión no
 // tiene organización, por eso no usa AppShell (marca del negocio, campana ni push).
+// short: etiqueta del menú inferior del celular (5 opciones en 390 px).
 const NAV = [
-  { to: "/admin", label: "Organizaciones", icon: Building2 },
-  { to: "/admin/demos", label: "Demos", icon: QrCode },
-  { to: "/admin/calidad", label: "Calidad IA", icon: ShieldCheck },
-  { to: "/admin/avisos", label: "Avisos", icon: BellRing },
+  { to: "/admin", label: "Organizaciones", short: "Clínicas", icon: Building2 },
+  { to: "/admin/demos", label: "Demos", short: "Demos", icon: QrCode },
+  { to: "/admin/pagos", label: "Pagos", short: "Pagos", icon: CreditCard },
+  { to: "/admin/calidad", label: "Calidad IA", short: "Calidad IA", icon: ShieldCheck },
+  { to: "/admin/avisos", label: "Avisos", short: "Avisos", icon: BellRing },
 ] as const;
 
 function ThemeToggle({ full = false }: { full?: boolean }) {
@@ -143,8 +145,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <main className="px-4 pt-4 pb-28 md:ml-64 md:px-8 md:py-8">{children}</main>
 
       {/* Bottom nav móvil */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
-        {NAV.map(({ to, label, icon: Icon }) => (
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+        {NAV.map(({ to, short, icon: Icon }) => (
           <Link
             key={to}
             to={to}
@@ -153,7 +155,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             }`}
           >
             <Icon className="h-5 w-5" />
-            {label}
+            {short}
             {to === "/admin/avisos" && unread > 0 && (
               <span className="absolute left-1/2 top-1 ml-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none tabular-nums text-destructive-foreground">
                 {unread > 99 ? "99+" : unread}
