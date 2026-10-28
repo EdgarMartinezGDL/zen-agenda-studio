@@ -20,6 +20,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAvisosRouteImport } from './routes/admin/avisos'
 import { Route as AdminCalidadRouteImport } from './routes/admin/calidad'
 import { Route as AdminDemosRouteImport } from './routes/admin/demos'
+import { Route as AdminPagosRouteImport } from './routes/admin/pagos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const AdminDemosRoute = AdminDemosRouteImport.update({
   path: '/admin/demos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPagosRoute = AdminPagosRouteImport.update({
+  id: '/admin/pagos',
+  path: '/admin/pagos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/pagos': typeof AdminPagosRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/pagos': typeof AdminPagosRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/admin/avisos': typeof AdminAvisosRoute
   '/admin/calidad': typeof AdminCalidadRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/pagos': typeof AdminPagosRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
+    | '/admin/pagos'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
+    | '/admin/pagos'
     | '/admin'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/admin/avisos'
     | '/admin/calidad'
     | '/admin/demos'
+    | '/admin/pagos'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +182,7 @@ export interface RootRouteChildren {
   AdminAvisosRoute: typeof AdminAvisosRoute
   AdminCalidadRoute: typeof AdminCalidadRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AdminPagosRoute: typeof AdminPagosRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDemosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/pagos': {
+      id: '/admin/pagos'
+      path: '/admin/pagos'
+      fullPath: '/admin/pagos'
+      preLoaderRoute: typeof AdminPagosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -266,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAvisosRoute: AdminAvisosRoute,
   AdminCalidadRoute: AdminCalidadRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AdminPagosRoute: AdminPagosRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
