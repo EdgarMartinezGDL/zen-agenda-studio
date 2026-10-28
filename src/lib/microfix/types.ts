@@ -533,6 +533,8 @@ export interface PlanChangeResult {
   direction?: 'UPGRADE' | 'DOWNGRADE' | 'LATERAL';
   tokenAdjustment?: TokenAdjustment;
   excess: { locations: PlanExcessItem; services: PlanExcessItem };
+  /** 6.6.5: solo si paga con Stripe. proratedAmountCents > 0 se cobró, < 0 queda a favor, null sin factura. */
+  stripe?: { proratedAmountCents: number | null; stripeInvoiceId: string | null };
 }
 
 /** GET /response-verifier/rejections — últimos 50, más nuevos primero. */
@@ -720,4 +722,84 @@ export interface BillingPrice {
   billingCycle: BillingCycle;
   currency: string;
   amountCents: number;
+}
+
+// --- Súper Panel: pagos (Fase 6, 6.6) ----------------------------------------------
+
+/** Elemento de GET /admin/billing/subscriptions (SUSPENDED, luego PAST_DUE, luego ACTIVE). */
+export interface AdminBillingSubscription {
+  organizationId: string;
+  organizationName: string;
+  planCode: string;
+  billingCycle: BillingCycle | null;
+  status: SubscriptionStatus;
+  paymentMethod: string | null;
+  managedByStripe: boolean;
+  currentPeriodEnd: string | null;
+  pastDueSince: string | null;
+  suspendsAt: string | null; // solo PAST_DUE
+  suspendedAt: string | null;
+  lastPayment: { amountCents: number; currency: string; paidAt: string | null } | null;
+  lastFailure: {
+    amountCents: number;
+    currency: string;
+    failureReason: string | null;
+    failureText: string | null;
+    createdAt: string;
+  } | null;
+}
+
+export interface AdminBillingOverview {
+  totals: Record<SubscriptionStatus, number>; // de todas, aunque se filtre
+  subscriptions: AdminBillingSubscription[];
+}
+
+/** Elemento de GET /admin/billing/prices: vigentes primero. */
+export interface AdminPrice {
+  id: string;
+  planCode: string;
+  billingCycle: BillingCycle;
+  currency: string;
+  amountCents: number;
+  isActive: boolean;
+  createdAt: string;
+  /** Solo vigentes: suscripciones que siguen con un precio viejo (debe ser 0). null = no vigente o sin Stripe. */
+  pendingMigration: number | null;
+}
+
+/** POST /admin/billing/prices y POST /admin/billing/prices/:id/migrate */
+export interface PriceChangeResult {
+  price: Omit<AdminPrice, 'pendingMigration'>;
+  migrated: number;
+  failed: { stripeSubscriptionId: string; organizationId: string | null; error: string }[];
+}
+
+export type DiscountType = 'PERCENT' | 'AMOUNT';
+export type DiscountDuration = 'ONCE' | 'REPEATING' | 'FOREVER';
+
+/** Elemento de GET /admin/billing/discounts (más nuevos primero). */
+export interface AdminDiscount {
+  id: string;
+  code: string;
+  type: DiscountType | null;
+  value: number | null; // PERCENT: 1–100; AMOUNT: centavos
+  duration: DiscountDuration | null;
+  durationMonths: number | null;
+  planCodes: string[];
+  expiresAt: string | null;
+  maxRedemptions: number | null;
+  timesRedeemed: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface CreateDiscountInput {
+  code: string; // 3–20 letras o números (se guarda en mayúsculas)
+  type: DiscountType;
+  value: number;
+  duration: DiscountDuration;
+  durationMonths?: number; // solo REPEATING: 1–36
+  planCodes: string[];
+  expiresAt?: string; // ISO, fecha futura
+  maxRedemptions?: number;
 }

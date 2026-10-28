@@ -10,6 +10,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
 import { Modal } from "@/components/Modal";
+import { money } from "@/components/SubscriptionCard";
 import { PLANS, planLabel } from "@/lib/admin-ui";
 import { adminApi } from "@/lib/microfix/api";
 import type {
@@ -279,7 +280,7 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
       <Confirm
         open={planOpen}
         title="Cambiar plan"
-        message={`${org.name} pasará de ${planLabel(currentPlan)} a ${planLabel(planCode)}. No se desactiva nada: si algo queda por encima del plan nuevo, te lo avisamos.`}
+        message={`${org.name} pasará de ${planLabel(currentPlan)} a ${planLabel(planCode)}. Si paga con tarjeta, el cambio es inmediato: al subir se le cobra la diferencia proporcional y al bajar le queda saldo a favor. No se desactiva nada: si algo queda por encima del plan nuevo, te lo avisamos.`}
         confirmLabel="Sí, cambiar"
         tone="primary"
         pending={planMutation.isPending}
@@ -304,6 +305,14 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
   );
 }
 
+// 6.6.5: el cambio se aplicó en Stripe con prorrateo.
+function prorationText(cents: number | null): string {
+  if (!cents) return "En Stripe no hubo diferencia por cobrar.";
+  return cents > 0
+    ? `En Stripe se cobró la diferencia: ${money(cents)}.`
+    : `En Stripe le quedó un saldo a favor de ${money(-cents)} para sus siguientes cobros.`;
+}
+
 function PlanResult({ result }: { result: PlanChangeResult }) {
   const excess: [string, PlanExcessItem][] = [
     ["Ubicaciones activas", result.excess.locations],
@@ -321,6 +330,7 @@ function PlanResult({ result }: { result: PlanChangeResult }) {
       {result.tokenAdjustment && (
         <p className="text-muted-foreground">{TOKEN_TEXT[result.tokenAdjustment]}</p>
       )}
+      {result.stripe && <p>{prorationText(result.stripe.proratedAmountCents)}</p>}
       {exceeded.length > 0 ? (
         <div className="rounded-md bg-status-cancelled-bg px-3 py-2 text-status-cancelled">
           <p className="font-semibold">Excede el plan nuevo:</p>
