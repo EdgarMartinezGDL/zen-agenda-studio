@@ -80,7 +80,7 @@ function PagosPage() {
       <h1 className="mb-4 text-2xl font-bold tracking-tight">Pagos</h1>
       <div className="mb-5 -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
         {SECTIONS.map((s) => (
-          <Button asChild variant="ghost" className="h-auto whitespace-normal"><button key={s} type="button" onClick={() => setSection(s)} className={chipBtn(section === s)}>
+          <Button key={s} asChild variant="ghost" className="h-auto whitespace-normal"><button type="button" onClick={() => setSection(s)} className={chipBtn(section === s)}>
             {s}
           </button></Button>
         ))}
@@ -111,7 +111,7 @@ function ClinicsSection() {
           Todas{all !== null && ` (${all})`}
         </button></Button>
         {(["SUSPENDED", "PAST_DUE", "ACTIVE"] as const).map((s) => (
-          <Button asChild variant="ghost" className="h-auto whitespace-normal"><button key={s} type="button" onClick={() => setStatus(s)} className={chipBtn(status === s)}>
+          <Button key={s} asChild variant="ghost" className="h-auto whitespace-normal"><button type="button" onClick={() => setStatus(s)} className={chipBtn(status === s)}>
             {STATUS_LABEL[s]}
             {totals && ` (${totals[s]})`}
           </button></Button>
