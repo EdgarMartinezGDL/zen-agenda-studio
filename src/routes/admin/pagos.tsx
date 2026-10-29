@@ -4,8 +4,6 @@ import { ExternalLink, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-
 import { AdminShell } from "@/components/AdminShell";
 import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
@@ -80,9 +78,9 @@ function PagosPage() {
       <h1 className="mb-4 text-2xl font-bold tracking-tight">Pagos</h1>
       <div className="mb-5 -mx-4 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
         {SECTIONS.map((s) => (
-          <Button key={s} asChild variant="ghost" className="h-auto whitespace-normal"><button type="button" onClick={() => setSection(s)} className={chipBtn(section === s)}>
+          <button key={s} type="button" onClick={() => setSection(s)} className={chipBtn(section === s)}>
             {s}
-          </button></Button>
+          </button>
         ))}
       </div>
       {section === "Clínicas" && <ClinicsSection />}
@@ -107,16 +105,16 @@ function ClinicsSection() {
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button type="button" onClick={() => setStatus(undefined)} className={chipBtn(!status)}>
+        <button type="button" onClick={() => setStatus(undefined)} className={chipBtn(!status)}>
           Todas{all !== null && ` (${all})`}
-        </button></Button>
+        </button>
         {(["SUSPENDED", "PAST_DUE", "ACTIVE"] as const).map((s) => (
-          <Button key={s} asChild variant="ghost" className="h-auto whitespace-normal"><button type="button" onClick={() => setStatus(s)} className={chipBtn(status === s)}>
+          <button key={s} type="button" onClick={() => setStatus(s)} className={chipBtn(status === s)}>
             {STATUS_LABEL[s]}
             {totals && ` (${totals[s]})`}
-          </button></Button>
+          </button>
         ))}
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+        <button
           type="button"
           onClick={() => void refetch()}
           disabled={isFetching}
@@ -124,7 +122,7 @@ function ClinicsSection() {
           className="ml-auto rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-        </button></Button>
+        </button>
       </div>
 
       {error && <Banner kind="error" message={errorText(error)} />}
@@ -142,13 +140,13 @@ function ClinicsSection() {
 
       <Modal open={!!history} onClose={() => setHistory(null)} title={`Cobros · ${history?.organizationName ?? ""}`}>
         {history && <PaymentsHistory orgId={history.organizationId} />}
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+        <button
           type="button"
           onClick={() => setHistory(null)}
           className="btn-primary mt-5 w-full px-4 py-2 text-sm"
         >
           Cerrar
-        </button></Button>
+        </button>
       </Modal>
     </>
   );
@@ -194,13 +192,13 @@ function ClinicCard({ s, onHistory }: { s: AdminBillingSubscription; onHistory: 
         </p>
       )}
 
-      <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+      <button
         type="button"
         onClick={onHistory}
         className="rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-accent"
       >
         Ver cobros
-      </button></Button>
+      </button>
     </section>
   );
 }
@@ -377,14 +375,14 @@ function PricesSection() {
           <p className="text-sm text-status-cancelled">El precio va de $10 a $100,000.</p>
         )}
         {formError && <Banner kind="error" message={formError} />}
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+        <button
           type="button"
           onClick={() => setConfirmOpen(true)}
           disabled={!valid}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
         >
           Cambiar precio
-        </button></Button>
+        </button>
       </section>
 
       {old.length > 0 && (
@@ -428,13 +426,13 @@ function PricesSection() {
             <p>{migrationText(result)}</p>
           </div>
         )}
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+        <button
           type="button"
           onClick={() => setResult(null)}
           className="btn-primary mt-5 w-full px-4 py-2 text-sm"
         >
           Entendido
-        </button></Button>
+        </button>
       </Modal>
     </>
   );
@@ -454,14 +452,14 @@ function PriceRow({ p, onRetry, retrying }: { p: AdminPrice; onRetry: () => void
               ? "1 suscripción sigue con el precio anterior"
               : `${p.pendingMigration} suscripciones siguen con el precio anterior`}
           </span>
-          <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+          <button
             type="button"
             onClick={onRetry}
             disabled={retrying}
             className="rounded-md border border-border bg-card px-3 py-1.5 text-sm font-semibold hover:bg-accent disabled:opacity-50"
           >
             {retrying ? "Reintentando…" : "Reintentar"}
-          </button></Button>
+          </button>
         </div>
       )}
     </li>
@@ -682,14 +680,14 @@ function DiscountsSection() {
           </div>
         </fieldset>
         {formError && <Banner kind="error" message={formError} />}
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+        <button
           type="button"
           onClick={() => create.mutate()}
           disabled={!canCreate}
           className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
         >
           {create.isPending ? "Creando…" : "Crear código"}
-        </button></Button>
+        </button>
       </section>
 
       <section className="card-zen mt-4 p-4">
@@ -719,13 +717,13 @@ function DiscountsSection() {
                 {d.expiresAt && ` · Vence el ${longDate(d.expiresAt)}`}
               </p>
               {d.active && (
-                <Button asChild variant="ghost" className="h-auto whitespace-normal"><button
+                <button
                   type="button"
                   onClick={() => setToDeactivate(d)}
                   className="rounded-md border border-border px-3 py-1.5 text-sm font-semibold hover:bg-accent"
                 >
                   Desactivar
-                </button></Button>
+                </button>
               )}
             </li>
           ))}
