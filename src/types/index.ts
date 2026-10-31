@@ -29,7 +29,7 @@ export interface Appointment {
   organizationId: string;
   locationId: string | null;
   serviceId: string | null;
-  location?: { id: string; name: string } | null;
+  location?: { id: string; name: string; timezone?: string | null } | null;
   service?: { id: string; name: string } | null;
 }
 
@@ -74,6 +74,7 @@ export interface Service {
 }
 
 export interface OrganizationContext {
+  timezone: string; // zona de la clínica
   locations: Location[];
   services: Service[];
 }
@@ -105,7 +106,7 @@ export interface Event {
   startAt: string;
   endAt: string;
   locationId: string | null;
-  location?: { id: string; name: string } | null;
+  location?: { id: string; name: string; timezone?: string | null } | null;
   venueName: string | null;
   venueAddress: string | null;
   mapsLink: string | null;

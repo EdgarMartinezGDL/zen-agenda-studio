@@ -1,3 +1,4 @@
+import { aInstante, fmtEnZona, hhmmEnZona, ymdEnZona, zonaClinica, zonaDeSede } from "@/lib/zona-horaria";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
@@ -8,7 +9,7 @@ import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
 import { Modal } from "@/components/Modal";
 import { Field, inputCls } from "@/routes/index";
-import { eventsApi, type CreateEventInput } from "@/lib/microfix/api";
+import { eventsApi, organizationApi, type CreateEventInput } from "@/lib/microfix/api";
 import { useAuth } from "@/lib/microfix/auth";
 import { compact, errorText } from "@/lib/microfix-ui";
 import { toast } from "sonner";
@@ -32,8 +33,8 @@ export const Route = createFileRoute("/eventos")({
   ),
 });
 
-const fmt = (iso: string) =>
-  new Date(iso).toLocaleString("es-MX", {
+const fmt = (iso: string, zona: string) =>
+  fmtEnZona(iso, zona, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -44,6 +45,12 @@ function EventosPage() {
   const orgId = useAuth().user?.organizationId ?? "";
   const [editing, setEditing] = useState<ZenEvent | null>(null);
   const [creating, setCreating] = useState(false);
+  const { data: context } = useQuery({
+    queryKey: ["org-context", orgId],
+    queryFn: () => organizationApi.context(orgId),
+    enabled: !!orgId,
+  });
+  const zona = context?.timezone ?? zonaClinica(context?.locations);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["events", orgId],
@@ -67,7 +74,7 @@ function EventosPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{ev.name}</p>
-                  <p className="text-xs text-muted-foreground">{fmt(ev.startAt)}</p>
+                  <p className="text-xs text-muted-foreground">{fmt(ev.startAt, ev.location?.timezone ?? (ev.locationId ? zonaDeSede(context?.locations, ev.locationId) : zona))}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {ev.location?.name ?? ev.venueName ?? "Sin ubicación"}
                   </p>
@@ -115,6 +122,7 @@ function EventosPage() {
         <EventModal
           orgId={orgId}
           event={editing}
+          zona={editing?.location?.timezone ?? (editing?.locationId ? zonaDeSede(context?.locations, editing.locationId) : zona)}
           onClose={() => {
             setCreating(false);
             setEditing(null);
@@ -127,11 +135,13 @@ function EventosPage() {
 
 function EventModal({
   orgId,
+  zona,
   event,
   onClose,
 }: {
   orgId: string;
   event: ZenEvent | null;
+  zona: string;
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -142,8 +152,8 @@ function EventModal({
   const [form, setForm] = useState({
     name: event?.name ?? "",
     description: event?.description ?? "",
-    start: event ? event.startAt.slice(0, 16) : "",
-    end: event ? event.endAt.slice(0, 16) : "",
+    start: event ? `${ymdEnZona(event.startAt, zona)}T${hhmmEnZona(event.startAt, zona)}` : "",
+    end: event ? `${ymdEnZona(event.endAt, zona)}T${hhmmEnZona(event.endAt, zona)}` : "",
     capacity: String(event?.capacity ?? 10),
     venueName: event?.venueName ?? "",
     venueAddress: event?.venueAddress ?? "",
@@ -162,8 +172,8 @@ function EventModal({
       const body = compact({
         name: form.name,
         description: form.description || undefined,
-        startAt: new Date(form.start).toISOString(),
-        endAt: new Date(form.end).toISOString(),
+        startAt: aInstante(form.start.slice(0, 10), form.start.slice(11, 16), zona).toISOString(),
+        endAt: aInstante(form.end.slice(0, 10), form.end.slice(11, 16), zona).toISOString(),
         capacity: Number(form.capacity),
         venueName: form.venueName || undefined,
         venueAddress: form.venueAddress || undefined,

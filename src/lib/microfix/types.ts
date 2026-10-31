@@ -212,6 +212,7 @@ export interface ContextEvent {
 
 /** GET /organizations/:id/context */
 export interface OrganizationContext extends Organization {
+  timezone: string; // zona de la clínica
   locations: Location[];
   services: ContextService[];
   ai: ContextAISettings; // con valores por defecto si la org no tiene configuración

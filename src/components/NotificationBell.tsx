@@ -1,3 +1,4 @@
+import { fmtEnZona, ymdEnZona, zonaClinica } from "@/lib/zona-horaria";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { BadgeCheck, Ban, Bell, CalendarClock, CalendarPlus, CalendarX, CreditCard, Tag, TriangleAlert, X } from "lucide-react";
@@ -6,7 +7,7 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 
-import { notificationsApi } from "@/lib/microfix/api";
+import { notificationsApi, organizationApi } from "@/lib/microfix/api";
 import type { AppNotification } from "@/lib/microfix/types";
 
 const ICON = { created: CalendarPlus, cancelled: CalendarX, rescheduled: CalendarClock } as const;
@@ -31,20 +32,13 @@ function iconOf(n: AppNotification) {
   return { Icon: Bell, className: "text-gold" };
 }
 
-// "AAAA-MM-DD" del día de la cita en la hora local (la agenda también usa la local).
-const localDay = (iso: string) => {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
-
-function ago(iso: string) {
+function ago(iso: string, zona: string) {
   const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
   if (min < 1) return "ahora";
   if (min < 60) return `hace ${min} min`;
   const h = Math.round(min / 60);
   if (h < 24) return `hace ${h} h`;
-  return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+  return fmtEnZona(iso, zona, { day: "numeric", month: "short" });
 }
 
 export function NotificationBell({ orgId, full = false, autoOpen = false }: {
@@ -56,6 +50,12 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { data: context } = useQuery({
+    queryKey: ["org-context", orgId],
+    queryFn: () => organizationApi.context(orgId),
+    enabled: !!orgId,
+  });
+  const zona = context?.timezone ?? zonaClinica(context?.locations);
 
   useEffect(() => {
     if (autoOpen) setOpen(true);
@@ -99,7 +99,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
     // Un aviso de cobro solo se marca como leído: no lleva a ninguna cita.
     if (n.type === "billing") return;
     setOpen(false);
-    if (n.startAt) navigate({ to: "/", search: { dia: localDay(n.startAt) } });
+    if (n.startAt) navigate({ to: "/", search: { dia: ymdEnZona(n.startAt, zona) } });
   };
 
   const badge =
@@ -184,7 +184,7 @@ export function NotificationBell({ orgId, full = false, autoOpen = false }: {
                               {n.title}
                             </span>
                             <span className="mt-0.5 block text-sm text-muted-foreground">{n.message}</span>
-                            <span className="mt-1 block text-xs text-muted-foreground">{ago(n.createdAt)}</span>
+                            <span className="mt-1 block text-xs text-muted-foreground">{ago(n.createdAt, zona)}</span>
                           </span>
                           {!n.read && <span aria-label="Sin leer" className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />}
                         </Button>

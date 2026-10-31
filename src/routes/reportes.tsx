@@ -1,3 +1,4 @@
+import { fmtEnZona, hoyEnZona, rangoDelDia, sumarDias, zonaClinica } from "@/lib/zona-horaria";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileSpreadsheet } from "lucide-react";
@@ -52,11 +53,10 @@ const RANGES = [
 
 type RangeKey = (typeof RANGES)[number]["key"];
 
-const ymd = (d: Date) => d.toISOString().slice(0, 10);
 const money = (n: number) =>
   n.toLocaleString("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 });
-const dateTime = (iso: string) =>
-  new Date(iso).toLocaleString("es-MX", {
+const dateTime = (iso: string, zona: string) =>
+  fmtEnZona(iso, zona, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -70,46 +70,37 @@ const inputCls =
 function ReportesPage() {
   const orgId = useAuth().user?.organizationId ?? "";
   const [range, setRange] = useState<RangeKey>("30");
-  const [customFrom, setCustomFrom] = useState(ymd(new Date()));
-  const [customTo, setCustomTo] = useState(ymd(new Date()));
+  const [customFromValue, setCustomFrom] = useState("");
+  const [customToValue, setCustomTo] = useState("");
   const [locationId, setLocationId] = useState("all");
   const [serviceId, setServiceId] = useState("all");
 
-  const { from, to } = useMemo(() => {
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-
-    if (range === "month") {
-      start.setDate(1);
-    } else if (range === "custom") {
-      const s = new Date(`${customFrom}T00:00:00`);
-      const e = new Date(`${customTo}T23:59:59`);
-      return { from: s.toISOString(), to: e.toISOString() };
-    } else {
-      start.setDate(start.getDate() - Number(range));
-    }
-    return { from: start.toISOString(), to: end.toISOString() };
-  }, [range, customFrom, customTo]);
-
   const { data: context } = useQuery({
-    queryKey: ["context", orgId],
+    queryKey: ["org-context", orgId],
     queryFn: () => organizationApi.context(orgId) as unknown as Promise<OrganizationContext>,
     enabled: !!orgId,
   });
+  const zona = context?.timezone ?? zonaClinica(context?.locations);
+  const today = hoyEnZona(zona);
+  const customFrom = customFromValue || today;
+  const customTo = customToValue || today;
+  const { inicio, fin, from, to } = useMemo(() => {
+    const inicio = range === "custom" ? customFrom : range === "month" ? `${today.slice(0, 7)}-01` : sumarDias(today, -Number(range));
+    const fin = range === "custom" ? customTo : today;
+    return { inicio, fin, from: rangoDelDia(inicio, zona).from, to: rangoDelDia(fin, zona).to };
+  }, [range, customFrom, customTo, today, zona]);
 
   const { data: report } = useQuery({
     queryKey: ["report", orgId, from, to],
     queryFn: () => reportsApi.get(orgId, from, to),
-    enabled: !!orgId,
+    enabled: !!orgId && !!context,
   });
 
   const { data: appointments, isLoading, error } = useQuery({
     queryKey: ["report-appointments", orgId, from, to],
     queryFn: () =>
       appointmentsApi.list({ organizationId: orgId, from, to }) as unknown as Promise<Appointment[]>,
-    enabled: !!orgId,
+    enabled: !!orgId && !!context,
   });
 
   const locations = context?.locations ?? [];
@@ -177,7 +168,7 @@ function ReportesPage() {
 
   const exportRows = () =>
     rows.map((a) => ({
-      Fecha: dateTime(a.startAt),
+      Fecha: dateTime(a.startAt, a.location?.timezone ?? zona),
       Paciente: a.clientName,
       Teléfono: a.clientPhone,
       Servicio: a.service?.name ?? "Sin servicio",
@@ -193,8 +184,8 @@ function ReportesPage() {
       const meta = [
         ["Reporte", "Mi Agenda Zen"],
         ["Periodo", rangeLabel],
-        ["Desde", from.slice(0, 10)],
-        ["Hasta", to.slice(0, 10)],
+        ["Desde", inicio],
+        ["Hasta", fin],
         ["Ubicación", locationLabel],
         ["Servicio", serviceLabel],
         ["Citas totales", metrics.total],
@@ -203,7 +194,7 @@ function ReportesPage() {
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Resumen");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportRows()), "Citas");
-      XLSX.writeFile(wb, `reporte-mi-agenda-zen-${from.slice(0, 10)}_${to.slice(0, 10)}.xlsx`);
+      XLSX.writeFile(wb, `reporte-mi-agenda-zen-${inicio}_${fin}.xlsx`);
     } catch {
       toast.error("No se pudo generar el archivo de Excel");
     }
@@ -219,7 +210,7 @@ function ReportesPage() {
       doc.setFontSize(10);
       doc.text(
         [
-          `Periodo: ${rangeLabel} (${from.slice(0, 10)} a ${to.slice(0, 10)})`,
+          `Periodo: ${rangeLabel} (${inicio} a ${fin})`,
           `Ubicación: ${locationLabel} · Servicio: ${serviceLabel}`,
           `Citas totales: ${metrics.total} · Realizadas: ${metrics.done} · Ingresos: ${money(metrics.revenue)}`,
         ],
@@ -242,7 +233,7 @@ function ReportesPage() {
         styles: { fontSize: 8 },
         headStyles: { fillColor: [15, 118, 110] },
       });
-      doc.save(`reporte-mi-agenda-zen-${from.slice(0, 10)}_${to.slice(0, 10)}.pdf`);
+      doc.save(`reporte-mi-agenda-zen-${inicio}_${fin}.pdf`);
     } catch {
       toast.error("No se pudo generar el PDF");
     }
@@ -364,7 +355,7 @@ function ReportesPage() {
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{a.clientName}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {dateTime(a.startAt)} · {a.service?.name ?? "Sin servicio"} ·{" "}
+                        {dateTime(a.startAt, a.location?.timezone ?? zona)} · {a.service?.name ?? "Sin servicio"} ·{" "}
                         {a.location?.name ?? "Sin ubicación"}
                       </p>
                     </div>
