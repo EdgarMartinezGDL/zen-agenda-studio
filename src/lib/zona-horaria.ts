@@ -19,7 +19,7 @@ export const zonaLabel = (tz?: string | null) =>
 /** Zona de la clínica: la que comparten todas sus sedes; si difieren o no hay, Centro. */
 export function zonaClinica(locations?: { timezone?: string | null }[] | null): string {
   const set = new Set((locations ?? []).map((l) => l.timezone || ZONA_CENTRO));
-  return set.size === 1 ? [...set][0] : ZONA_CENTRO;
+  return set.size === 1 ? ([...set] as [string, ...string[]])[0] : ZONA_CENTRO;
 }
 
 /** Zona de una sede por id; si no se encuentra, la de la clínica. */
@@ -37,7 +37,7 @@ const partes = (d: Date, tz: string) => {
       timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", second: "2-digit",
     }).formatToParts(d).map((x) => [x.type, x.value]),
-  );
+  ) as Record<"year" | "month" | "day" | "hour" | "minute" | "second", string>;
   return { y: +p.year, m: +p.month, d: +p.day, h: +p.hour, mi: +p.minute, s: +p.second };
 };
 
@@ -58,13 +58,13 @@ export const hoyEnZona = (tz: string) => ymdEnZona(new Date(), tz);
 
 /** Suma días a "AAAA-MM-DD" (calendario puro, sin zona). */
 export function sumarDias(ymd: string, dias: number): string {
-  const [y, m, d] = ymd.split("-").map(Number);
+  const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
   return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10);
 }
 
 /** Días entre dos fechas "AAAA-MM-DD" (b − a). */
 export function diasEntre(a: string, b: string): number {
-  const t = (s: string) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const t = (s: string) => { const [y, m, d] = s.split("-").map(Number) as [number, number, number]; return Date.UTC(y, m - 1, d); };
   return Math.round((t(b) - t(a)) / 86_400_000);
 }
 
@@ -75,8 +75,8 @@ const desfaseMin = (d: Date, tz: string) => {
 
 /** Fecha "AAAA-MM-DD" + hora "HH:MM" en la zona de la sede → instante real (Date). */
 export function aInstante(ymd: string, hhmm: string, tz: string): Date {
-  const [y, m, d] = ymd.split("-").map(Number);
-  const [h, mi] = hhmm.split(":").map(Number);
+  const [y, m, d] = ymd.split("-").map(Number) as [number, number, number];
+  const [h, mi] = hhmm.split(":").map(Number) as [number, number];
   const local = Date.UTC(y, m - 1, d, h, mi);
   let t = local - desfaseMin(new Date(local), tz) * 60000;
   t = local - desfaseMin(new Date(t), tz) * 60000; // segunda pasada por si cruza el cambio de horario
