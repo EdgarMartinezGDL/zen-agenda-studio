@@ -5,7 +5,7 @@ import type { AppNotification, AuthUser } from "@/lib/microfix/types";
 
 const state = vi.hoisted(() => ({
   user: null as AuthUser | null, navigate: vi.fn(),
-  list: vi.fn(), unreadCount: vi.fn(), markRead: vi.fn(),
+  list: vi.fn(), unreadCount: vi.fn(), markRead: vi.fn(), context: vi.fn(),
   billingNotices: vi.fn(), markBillingNoticeRead: vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
@@ -14,7 +14,7 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
 }));
 vi.mock("@/lib/microfix/api", () => ({
-  organizationApi: { context: vi.fn().mockResolvedValue({ timezone: "America/Mexico_City", locations: [] }) },
+  organizationApi: { context: state.context },
   notificationsApi: { list: state.list, unreadCount: state.unreadCount, markRead: state.markRead },
   adminApi: { billingNotices: state.billingNotices, markBillingNoticeRead: state.markBillingNoticeRead },
 }));
@@ -45,6 +45,7 @@ const notice: AppNotification = {
 };
 beforeEach(() => {
   vi.resetAllMocks(); state.user = null;
+  state.context.mockResolvedValue({ timezone: "America/Mexico_City", locations: [] });
   state.list.mockResolvedValue({ items: [notice], nextCursor: null });
   state.unreadCount.mockResolvedValue({ count: 1 });
   state.markRead.mockResolvedValue({ id: "notice-1", read: true });
@@ -73,6 +74,13 @@ describe("Professional billing notices", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Pago fallido/ }));
     expect(state.navigate).toHaveBeenCalledWith({ to: "/", search: { dia: "2026-10-27" } });
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("opens the clinic day rather than the UTC day near midnight", async () => {
+    state.list.mockResolvedValue({ items: [{ ...notice, type: "created", startAt: "2026-10-31T04:44:00Z", appointmentId: "appointment-1" }], nextCursor: null });
+    mount(<NotificationBell orgId="org-1" autoOpen />);
+    await waitFor(() => expect(state.context).toHaveBeenCalledWith("org-1"));
+    fireEvent.click(await screen.findByRole("button", { name: /Pago fallido/ }));
+    expect(state.navigate).toHaveBeenCalledWith({ to: "/", search: { dia: "2026-10-30" } });
   });
 });
 
