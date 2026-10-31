@@ -34,5 +34,6 @@
 - [ ] Verificar activación con sesión, retiro del registro y entrega real en celular: falta la dirección pública del servidor MicroFix Cloud y una sesión disponible.
 
 # Zona horaria de las sedes
-- [ ] Aplicar el archivo entregado a ubicaciones, horarios, cupos, agenda, eventos, reportes, pausados y campana.
-- [ ] Verificar conversiones y pruebas existentes; comprobar el flujo real si hay sesión disponible.
+- [x] Aplicar el archivo entregado a ubicaciones, horarios, cupos, agenda, eventos, reportes, pausados y campana; solo anotaciones de tipos añadidas al módulo para compatibilidad con TypeScript estricto.
+- [x] Verificar 114 pruebas, conversiones y formularios con dispositivo en Tokio; compilación correcta y acceso sin errores de ejecución.
+- [ ] Verificar lectura y guardado reales con MicroFix Cloud: faltan dirección pública del servidor y sesión profesional disponible.
