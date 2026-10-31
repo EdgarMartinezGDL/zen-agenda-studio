@@ -5,7 +5,7 @@ const api = vi.hoisted(() => ({ list: vi.fn(), pause: vi.fn(), resume: vi.fn() }
 vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (options: unknown) => ({ options }), Link: ({ children }: { children: React.ReactNode }) => <span>{children}</span> }));
 vi.mock("@/components/AppShell", () => ({ AppShell: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/lib/microfix/auth", () => ({ useAuth: () => ({ user: { organizationId: "org-1" } }) }));
-vi.mock("@/lib/microfix/api", () => ({ pausedApi: api }));
+vi.mock("@/lib/microfix/api", () => ({ pausedApi: api, organizationApi: { context: vi.fn().mockResolvedValue({ timezone: "America/Mexico_City", locations: [] }) } }));
 import { Route } from "@/routes/pausados";
 const clients: QueryClient[] = [];
 function mount() {

@@ -1,3 +1,4 @@
+import { fmtEnZona, zonaClinica } from "@/lib/zona-horaria";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Pause, Play, RefreshCw } from "lucide-react";
@@ -8,7 +9,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 
 import { Banner } from "@/components/Banner";
-import { pausedApi } from "@/lib/microfix/api";
+import { organizationApi, pausedApi } from "@/lib/microfix/api";
 import { useAuth } from "@/lib/microfix/auth";
 import type { PausedConversation } from "@/lib/microfix/types";
 import { errorText } from "@/lib/microfix-ui";
@@ -39,8 +40,8 @@ const ORIGIN: Record<PausedConversation["origin"], string> = {
 
 const inputCls =
   "w-full rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
-const dateTime = (iso: string) =>
-  new Date(iso).toLocaleString("es-MX", {
+const dateTime = (iso: string, zona: string) =>
+  fmtEnZona(iso, zona, {
     day: "numeric",
     month: "short",
     hour: "numeric",
@@ -51,6 +52,12 @@ function PausadosPage() {
   const orgId = useAuth().user?.organizationId ?? "";
   const queryClient = useQueryClient();
   const [phone, setPhone] = useState("");
+  const { data: context } = useQuery({
+    queryKey: ["org-context", orgId],
+    queryFn: () => organizationApi.context(orgId),
+    enabled: !!orgId,
+  });
+  const zona = context?.timezone ?? zonaClinica(context?.locations);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["paused", orgId],
@@ -122,7 +129,7 @@ function PausadosPage() {
               <p className="truncate font-semibold">{c.name ?? "Paciente sin nombre"}</p>
               <p className="text-sm text-muted-foreground">{c.phone}</p>
               <p className="text-xs text-muted-foreground">
-                {ORIGIN[c.origin]} · desde {dateTime(c.pausedAt)}
+                {ORIGIN[c.origin]} · desde {dateTime(c.pausedAt, zona)}
               </p>
             </div>
             <Button variant="ghost"

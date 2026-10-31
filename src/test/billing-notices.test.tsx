@@ -14,6 +14,7 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
 }));
 vi.mock("@/lib/microfix/api", () => ({
+  organizationApi: { context: vi.fn().mockResolvedValue({ timezone: "America/Mexico_City", locations: [] }) },
   notificationsApi: { list: state.list, unreadCount: state.unreadCount, markRead: state.markRead },
   adminApi: { billingNotices: state.billingNotices, markBillingNoticeRead: state.markBillingNoticeRead },
 }));

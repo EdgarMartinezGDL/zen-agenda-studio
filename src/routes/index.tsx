@@ -1,3 +1,4 @@
+import { aInstante, diasEntre, fmtEnZona, fmtFecha, hhmmEnZona, hoyEnZona, rangoDelDia, sumarDias, ymdEnZona, zonaClinica, zonaDeSede } from "@/lib/zona-horaria";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -70,12 +71,6 @@ const STATUS_CLASS: Record<AppointmentStatus, string> = {
   REAGENDADA: "bg-status-pending-bg text-status-pending",
 };
 
-const fmtDate = (d: Date) =>
-  d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
-const fmtTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-const isoDay = (d: Date) => d.toISOString().slice(0, 10);
-
 function HoyPage() {
   const orgId = useAuth().user?.organizationId ?? "";
   const qc = useQueryClient();
@@ -84,31 +79,28 @@ function HoyPage() {
   const [newOpen, setNewOpen] = useState(false);
   const { dia } = Route.useSearch();
   const navigate = useNavigate();
+  const { data: context } = useQuery({
+    queryKey: ["org-context", orgId],
+    queryFn: () => organizationApi.context(orgId) as unknown as Promise<OrganizationContext>,
+    enabled: !!orgId,
+  });
+  const zona = context?.timezone ?? zonaClinica(context?.locations);
 
   // Llegó ?dia=: se salta a ese día y se limpia la URL.
   useEffect(() => {
-    if (!dia) return;
-    const [y = 0, m = 1, d = 1] = dia.split("-").map(Number);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    setOffset(Math.round((new Date(y, m - 1, d).getTime() - today.getTime()) / 86_400_000));
+    if (!dia || !context) return;
+    setOffset(diasEntre(hoyEnZona(zona), dia));
     navigate({ to: "/", search: {}, replace: true });
-  }, [dia, navigate]);
+  }, [dia, navigate, zona, context]);
 
-  const { day, from, to } = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + offset);
-    const end = new Date(d);
-    end.setHours(23, 59, 59, 999);
-    return { day: d, from: d.toISOString(), to: end.toISOString() };
-  }, [offset]);
+  const day = sumarDias(hoyEnZona(zona), offset);
+  const { from, to } = rangoDelDia(day, zona);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["appointments", orgId, isoDay(day)],
+    queryKey: ["appointments", orgId, day, zona],
     queryFn: () =>
       appointmentsApi.list({ organizationId: orgId, from, to }) as unknown as Promise<Appointment[]>,
-    enabled: !!orgId,
+    enabled: !!orgId && !!context,
     refetchInterval: 20_000,
   });
 
@@ -128,7 +120,7 @@ function HoyPage() {
             <ChevronLeft className="h-4 w-4" />
           </button>
           <p className="flex-1 text-center text-xl font-bold capitalize tracking-tight md:text-2xl">
-            {fmtDate(day)}
+            {fmtFecha(day, { weekday: "long", day: "numeric", month: "long" })}
           </p>
           {offset !== 0 && (
             <button
@@ -163,7 +155,7 @@ function HoyPage() {
               onClick={() => setDetail(a)}
               className="card-zen grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 text-left transition-colors hover:bg-accent/40"
             >
-              <span className="shrink-0 text-sm font-bold text-primary">{fmtTime(a.startAt)}</span>
+              <span className="shrink-0 text-sm font-bold text-primary">{fmtEnZona(a.startAt, a.location?.timezone ?? zona, { hour: "2-digit", minute: "2-digit" })}</span>
               <span className="min-w-0">
                 <span className="block truncate font-semibold">{a.clientName}</span>
                 <span className="block truncate text-xs text-muted-foreground">
@@ -190,6 +182,7 @@ function HoyPage() {
 
       <DetailModal
         appointment={detail}
+        zona={zona}
         onClose={() => setDetail(null)}
         onDone={() => {
           setDetail(null);
@@ -211,10 +204,12 @@ function HoyPage() {
 
 function DetailModal({
   appointment,
+  zona,
   onClose,
   onDone,
 }: {
   appointment: Appointment | null;
+  zona: string;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -232,6 +227,15 @@ function DetailModal({
     onClose();
   };
 
+  const ctx = useQuery({
+    queryKey: ["org-context", appointment?.organizationId ?? ""],
+    queryFn: () =>
+      organizationApi.context(appointment?.organizationId ?? "") as unknown as Promise<OrganizationContext>,
+    enabled: !!appointment,
+  });
+
+  const zc = appointment?.location?.timezone ?? zonaDeSede(ctx.data?.locations, appointment?.locationId);
+
   const statusM = useMutation({
     mutationFn: (status: AppointmentStatus) =>
       appointmentsApi.setStatus(appointment!.id, status as "ASISTIO" | "NO_ASISTIO"),
@@ -248,10 +252,11 @@ function DetailModal({
 
   const rescheduleM = useMutation({
     mutationFn: () => {
-      const start = new Date(`${date}T${time}`);
+      if (!appointment) throw new Error("No hay cita seleccionada");
+      const start = aInstante(date, time, zc);
       const duration =
-        new Date(appointment!.endAt).getTime() - new Date(appointment!.startAt).getTime();
-      return appointmentsApi.reschedule(appointment!.id, {
+        new Date(appointment.endAt).getTime() - new Date(appointment.startAt).getTime();
+      return appointmentsApi.reschedule(appointment.id, {
         startAt: start.toISOString(),
         endAt: new Date(start.getTime() + duration).toISOString(),
       });
@@ -261,16 +266,16 @@ function DetailModal({
   });
 
   const dayAppts = useQuery({
-    queryKey: ["appointments-day", appointment?.organizationId ?? "", date],
+    queryKey: ["appointments-day", appointment?.organizationId ?? "", date, zc],
     enabled: view === "reschedule" && !!date && !!appointment,
     refetchInterval: 20_000,
     queryFn: () => {
-      const from = new Date(`${date}T00:00:00`);
-      const to = new Date(`${date}T23:59:59`);
+      if (!appointment) return Promise.resolve([]);
+      const { from, to } = rangoDelDia(date, zc);
       return appointmentsApi.list({
-        organizationId: appointment!.organizationId,
-        from: from.toISOString(),
-        to: to.toISOString(),
+        organizationId: appointment.organizationId,
+        from,
+        to,
       }) as unknown as Promise<Appointment[]>;
     },
   });
@@ -281,7 +286,7 @@ function DetailModal({
 
   const hasCollision = useMemo(() => {
     if (!date || !time || !appointment || !dayAppts.data) return false;
-    const start = new Date(`${date}T${time}`).getTime();
+    const start = aInstante(date, time, zc).getTime();
     const end = start + duration;
     return dayAppts.data.some((a) => {
       if (a.id === appointment.id) return false;
@@ -290,14 +295,7 @@ function DetailModal({
       const e = new Date(a.endAt).getTime();
       return start < e && s < end;
     });
-  }, [date, time, appointment, dayAppts.data, duration]);
-
-  const ctx = useQuery({
-    queryKey: ["org-context", appointment?.organizationId ?? ""],
-    queryFn: () =>
-      organizationApi.context(appointment!.organizationId) as unknown as Promise<OrganizationContext>,
-    enabled: !!appointment,
-  });
+  }, [date, time, appointment, dayAppts.data, duration, zc]);
 
   const price = ctx.data?.services
     .find((s) => s.id === appointment?.serviceId)
@@ -321,7 +319,7 @@ function DetailModal({
           <Row label="Ubicación" value={appointment.location?.name ?? "—"} />
           <Row
             label="Fecha"
-            value={`${fmtDate(new Date(appointment.startAt))} · ${fmtTime(appointment.startAt)}`}
+            value={`${fmtEnZona(appointment.startAt, appointment.location?.timezone ?? zona, { weekday: "long", day: "numeric", month: "long" })} · ${fmtEnZona(appointment.startAt, appointment.location?.timezone ?? zona, { hour: "2-digit", minute: "2-digit" })}`}
           />
           <Row label="Notas" value={appointment.notes ?? "—"} />
           <div className="grid grid-cols-1 gap-3 pt-5 sm:grid-cols-2">
@@ -452,10 +450,8 @@ function DetailModal({
       onCancel={() => setConfirm(null)}
       onConfirm={() => {
         setConfirm(null);
-        const d = new Date(appointment.startAt);
-        const pad = (n: number) => String(n).padStart(2, "0");
-        setDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
-        setTime(`${pad(d.getHours())}:${pad(d.getMinutes())}`);
+        setDate(ymdEnZona(appointment.startAt, zc));
+        setTime(hhmmEnZona(appointment.startAt, zc));
         setView("reschedule");
 
       }}
@@ -515,7 +511,7 @@ function NewAppointmentModal({
   const create = useMutation({
     mutationFn: (force: boolean) => {
       const service = context?.services.find((s) => s.id === form.serviceId);
-      const start = new Date(`${form.date}T${form.time}`);
+      const start = aInstante(form.date, form.time, zonaDeSede(context?.locations, form.locationId));
       const end = new Date(start.getTime() + (service?.durationMinutes ?? 30) * 60000);
       return appointmentsApi.create(
         {

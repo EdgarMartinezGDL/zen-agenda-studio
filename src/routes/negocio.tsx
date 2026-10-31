@@ -1,3 +1,4 @@
+import { ZONAS_HORARIAS, aInstante, fmtEnZona, fmtFecha, hoyEnZona, rangoDelDia, sumarDias, zonaClinica, zonaDeSede, zonaLabel } from "@/lib/zona-horaria";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Copy, MapPin, Pencil, RotateCcw, Trash2 } from "lucide-react";
@@ -164,6 +165,7 @@ function LocationsTab({ orgId }: { orgId: string }) {
     name: "",
     address: "",
     mapsUrl: "",
+    timezone: "America/Mexico_City",
     phone: "",
     email: "",
     isActive: true,
@@ -175,6 +177,7 @@ function LocationsTab({ orgId }: { orgId: string }) {
       name: loc?.name ?? "",
       address: loc?.address ?? "",
       mapsUrl: loc?.mapsUrl ?? "",
+      timezone: loc?.timezone ?? "America/Mexico_City",
       phone: loc?.phone ?? "",
       email: loc?.email ?? "",
       isActive: loc?.isActive ?? true,
@@ -194,6 +197,7 @@ function LocationsTab({ orgId }: { orgId: string }) {
     mutationFn: () => {
       const body = compact({
         name: form.name,
+        timezone: form.timezone,
         address: form.address || undefined,
         mapsUrl: form.mapsUrl.trim() || undefined,
         phone: form.phone || undefined,
@@ -206,6 +210,8 @@ function LocationsTab({ orgId }: { orgId: string }) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["locations"] });
+      qc.invalidateQueries({ queryKey: ["org-context", orgId] });
+      qc.invalidateQueries({ queryKey: ["context", orgId] });
       toast.success(editing ? "Ubicación actualizada" : "Ubicación agregada");
       close();
     },
@@ -217,6 +223,8 @@ function LocationsTab({ orgId }: { orgId: string }) {
     mutationFn: () => locationsApi.update(editing!.id, { isActive: false }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["locations"] });
+      qc.invalidateQueries({ queryKey: ["org-context", orgId] });
+      qc.invalidateQueries({ queryKey: ["context", orgId] });
       toast.success("Ubicación desactivada");
       setConfirming(false);
       close();
@@ -278,6 +286,7 @@ function LocationsTab({ orgId }: { orgId: string }) {
             <div className="space-y-4">
               <ReadRow label="Nombre" value={editing.name} />
               <ReadRow label="Dirección" value={editing.address} />
+              <ReadRow label="Zona horaria" value={zonaLabel(editing.timezone)} />
               <ReadRow label="Teléfono" value={editing.phone} />
               <ReadRow label="Correo" value={editing.email} />
               <ReadRow label="Estado" value={editing.isActive ? "Activa" : "Inactiva"} />
@@ -329,6 +338,12 @@ function LocationsTab({ orgId }: { orgId: string }) {
                   Ingresa un enlace válido que empiece con https://
                 </p>
               )}
+              <Field label="Zona horaria">
+                <select className={bigInput} value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}>
+                  {ZONAS_HORARIAS.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
+                </select>
+                <p className="text-sm text-muted-foreground">Las citas, horarios y recordatorios de esta sede usan esta hora.</p>
+              </Field>
               <Field label="Teléfono">
                 <input className={bigInput} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </Field>
@@ -640,19 +655,8 @@ function ServicePrices({ service, orgId }: { service: Service; orgId: string }) 
 
 /* ---------------- Horarios ---------------- */
 
-const todayYmd = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
 const formatDateLabel = (ymd: string) => {
-  const d = new Date(`${ymd}T00:00:00`);
-  const txt = d.toLocaleDateString("es-MX", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const txt = fmtFecha(ymd, { weekday: "long", day: "numeric", month: "short", year: "numeric" });
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 };
 
@@ -673,7 +677,7 @@ function HoursTab({ orgId }: { orgId: string }) {
   const [showPast, setShowPast] = useState(false);
   const [overlapStep, setOverlapStep] = useState<0 | 1 | 2>(0);
   const [form, setForm] = useState({
-    date: todayYmd(),
+    date: "",
     startTime: "09:00",
     endTime: "18:00",
     appointmentDuration: "55",
@@ -684,16 +688,19 @@ function HoursTab({ orgId }: { orgId: string }) {
     isActive: true,
   });
 
-  const { data } = useQuery({
-    queryKey: ["business-hours", orgId],
-    queryFn: async () =>
-      (await businessHoursApi.list(orgId, { from: todayYmd() })).map(
-        (h) => ({ ...h, capacity: h.slotCapacity ?? 1 }) as unknown as BusinessHour,
-      ),
-  });
   const { data: locations } = useQuery({
     queryKey: ["locations", orgId],
     queryFn: () => locationsApi.list(orgId) as unknown as Promise<Location[]>,
+  });
+  const zona = zonaDeSede(locations, form.locationId);
+  const today = hoyEnZona(zona);
+  const { data } = useQuery({
+    queryKey: ["business-hours", orgId, today],
+    queryFn: async () =>
+      (await businessHoursApi.list(orgId, { from: today })).map(
+        (h) => ({ ...h, capacity: h.slotCapacity ?? 1 }) as unknown as BusinessHour,
+      ),
+    enabled: !!locations,
   });
   const { data: services } = useQuery({
     queryKey: ["services", orgId],
@@ -707,7 +714,7 @@ function HoursTab({ orgId }: { orgId: string }) {
   const locationName = (id: string | null | undefined) =>
     locations?.find((l) => l.id === id)?.name ?? "Sin ubicación";
 
-  const today = todayYmd();
+
 
   const groups = useMemo(() => {
     const map = new Map<string, BusinessHour[]>();
@@ -732,7 +739,7 @@ function HoursTab({ orgId }: { orgId: string }) {
 
   const open = (h: BusinessHour | null, duplicate = false) => {
     setForm({
-      date: duplicate ? today : (h?.date ?? today),
+      date: duplicate ? hoyEnZona(zonaDeSede(locations, h?.locationId)) : (h?.date ?? hoyEnZona(zonaClinica(locations))),
       startTime: h?.startTime ?? "09:00",
       endTime: h?.endTime ?? "18:00",
       appointmentDuration: String(h?.appointmentDuration ?? 55),
@@ -1025,7 +1032,7 @@ function HoursTab({ orgId }: { orgId: string }) {
                       const locationId = e.target.value;
                       const allowed = servicesAt(locationId).map((s) => s.id);
                       // Al cambiar de sede se quitan los servicios que no se ofrecen ahí.
-                      setForm({ ...form, locationId, serviceIds: form.serviceIds.filter((id) => allowed.includes(id)) });
+                      setForm({ ...form, locationId, date: form.date === today ? hoyEnZona(zonaDeSede(locations, locationId)) : form.date, serviceIds: form.serviceIds.filter((id) => allowed.includes(id)) });
                     }}
                   >
                     <option value="" disabled>
@@ -1157,11 +1164,8 @@ type GridSlot = {
   slot: AppointmentSlot | null;
 };
 
-const fmtTime = (d: Date) =>
-  d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: true });
-
-const ymdOf = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const fmtTime = (d: Date, zona: string) =>
+  fmtEnZona(d, zona, { hour: "2-digit", minute: "2-digit", hour12: true });
 
 function SlotsTab({ orgId }: { orgId: string }) {
   const qc = useQueryClient();
@@ -1172,17 +1176,15 @@ function SlotsTab({ orgId }: { orgId: string }) {
   const [isActive, setIsActive] = useState(true);
   const [newSlot, setNewSlot] = useState({ date: "", time: "", duration: "55" });
 
-  const { from, to } = useMemo(() => {
-    const start = new Date();
-    const end = new Date();
-    end.setDate(end.getDate() + 14);
-    return { from: start.toISOString(), to: end.toISOString() };
-  }, []);
-
   const { data: locations } = useQuery({
     queryKey: ["locations", orgId],
     queryFn: () => locationsApi.list(orgId) as unknown as Promise<Location[]>,
   });
+  const zona = zonaClinica(locations);
+  const today = hoyEnZona(zona);
+  const limit = sumarDias(today, 14);
+  const from = rangoDelDia(today, zona).from;
+  const to = rangoDelDia(limit, zona).to;
 
   const { data } = useQuery({
     queryKey: ["slots", orgId, locationId, from],
@@ -1202,8 +1204,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
 
   /** Partición matemática: intervalo = duración de cita + descanso. */
   const groups = useMemo(() => {
-    const today = todayYmd();
-    const limit = ymdOf(new Date(Date.now() + 14 * 86400000));
+
     const existing = new Map<number, AppointmentSlot>();
     for (const s of data ?? []) existing.set(new Date(s.startAt).getTime(), s);
 
@@ -1216,8 +1217,8 @@ function SlotsTab({ orgId }: { orgId: string }) {
       const startMin = toMin(h.startTime);
       const endMin = toMin(h.endTime);
       for (let m = startMin; m + Number(h.appointmentDuration) <= endMin; m += step) {
-        const startAt = new Date(`${h.date}T00:00:00`);
-        startAt.setMinutes(m);
+        const hhmm = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+        const startAt = aInstante(h.date, hhmm, zonaDeSede(locations, h.locationId));
         const endAt = new Date(startAt.getTime() + Number(h.appointmentDuration) * 60000);
         const found = existing.get(startAt.getTime());
         const item: GridSlot = {
@@ -1242,7 +1243,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
         ([date, list]) =>
           [date, list.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())] as const,
       );
-  }, [data, hours, locationId]);
+  }, [data, hours, locationId, locations, today, limit]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["slots"] });
   const close = () => {
@@ -1255,7 +1256,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
       if (editing?.slot) {
         return appointmentSlotsApi.update(editing.slot.id, { capacity: Number(capacity), isActive });
       }
-      const start = editing ? editing.startAt : new Date(`${newSlot.date}T${newSlot.time}`);
+      const start = editing ? editing.startAt : aInstante(newSlot.date, newSlot.time, zonaDeSede(locations, locationId));
       const end = editing
         ? editing.endAt
         : new Date(start.getTime() + Number(newSlot.duration) * 60000);
@@ -1302,7 +1303,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
           <section key={date} className="rounded-xl border border-border bg-card/60 p-3">
             <h2 className="mb-3 border-b border-border pb-2 text-base font-bold">
               {formatDateLabel(date)}
-              {date === todayYmd() && (
+              {date === today && (
                 <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
                   Hoy
                 </span>
@@ -1323,7 +1324,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
                     >
                       <span className="min-w-0">
                         <span className="block text-base font-semibold">
-                          {fmtTime(s.startAt)} – {fmtTime(s.endAt)}
+                          {fmtTime(s.startAt, zonaDeSede(locations, s.locationId))} – {fmtTime(s.endAt, zonaDeSede(locations, s.locationId))}
                         </span>
                         {!s.isActive && (
                           <span className="text-sm font-semibold text-status-cancelled">
@@ -1368,8 +1369,8 @@ function SlotsTab({ orgId }: { orgId: string }) {
           <div className="space-y-3">
             {editing && (
               <p className="rounded-md bg-muted/60 p-3 text-sm font-semibold">
-                {formatDateLabel(editing.date)} · {fmtTime(editing.startAt)} –{" "}
-                {fmtTime(editing.endAt)}
+                {formatDateLabel(editing.date)} · {fmtTime(editing.startAt, zonaDeSede(locations, editing.locationId))} –{" "}
+                {fmtTime(editing.endAt, zonaDeSede(locations, editing.locationId))}
               </p>
             )}
             {creating && (
