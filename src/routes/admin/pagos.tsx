@@ -8,7 +8,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
 import { Modal } from "@/components/Modal";
-import { longDate, money } from "@/components/SubscriptionCard";
+import { longDate, money, paymentStatusLabel } from "@/components/SubscriptionCard";
 import { PLANS, planLabel } from "@/lib/admin-ui";
 import { adminBillingApi } from "@/lib/microfix/api";
 import type {
@@ -213,12 +213,14 @@ function PaymentsHistory({ orgId }: { orgId: string }) {
   if (data.length === 0) return <p className="text-sm text-muted-foreground">Aún no hay cobros.</p>;
   return (
     <ul className="max-h-[60vh] divide-y divide-border overflow-y-auto">
-      {data.map((p) => (
+      {data.map((p) => {
+        const status = paymentStatusLabel(p);
+        return (
         <li key={p.id} className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 py-2 text-sm">
           <div className="min-w-0">
             <p className="font-medium">{longDate(p.paidAt ?? p.createdAt)}</p>
-            <p className={`text-xs ${p.status === "PAID" ? "text-status-confirmed" : "text-status-cancelled"}`}>
-              {p.status === "PAID" ? "Pagado" : `Rechazado${p.failureText ? ` · ${p.failureText}` : ""}`}
+            <p className={`text-xs ${status.className}`}>
+              {status.text}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -235,7 +237,8 @@ function PaymentsHistory({ orgId }: { orgId: string }) {
             )}
           </div>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

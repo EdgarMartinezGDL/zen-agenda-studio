@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Ban, RefreshCw } from "lucide-react";
+import { Ban, Bell, RefreshCw, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -86,17 +86,21 @@ function AvisosPage() {
       {list.isLoading && <p className="text-sm text-muted-foreground">Cargando…</p>}
       {list.data && items.length === 0 && (
         <p className="card-zen p-4 text-sm text-muted-foreground">
-          Sin avisos: ninguna clínica ha quedado suspendida.
+          Sin avisos por ahora.
         </p>
       )}
 
       <div className="space-y-3">
-        {items.map((n) => (
+        {items.map((n) => {
+          const Icon = n.kind === "ACCOUNT_SUSPENDED" ? Ban : n.kind === "DUPLICATE_CHARGE_REFUNDED" ? RotateCcw : Bell;
+          const iconClass = n.kind === "ACCOUNT_SUSPENDED" || (n.kind === "DUPLICATE_CHARGE_REFUNDED" && n.title === "Reembolso manual requerido")
+            ? "text-destructive" : "text-gold";
+          return (
           <article
             key={n.id}
             className={`card-zen flex flex-wrap items-start gap-x-3 gap-y-2 p-4 ${n.read ? "" : "ring-1 ring-destructive/40"}`}
           >
-            <Ban className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconClass}`} />
             {/* En celular el botón baja debajo del texto para no apretarlo. */}
             <div className="min-w-0 flex-1 basis-[calc(100%-2rem)] sm:basis-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -107,6 +111,7 @@ function AvisosPage() {
                   </span>
                 )}
               </div>
+              <p className="mt-1 text-sm font-medium">{n.title}</p>
               <p className="mt-1 text-sm text-muted-foreground">{n.message}</p>
               <p className="mt-1 text-xs text-muted-foreground">{dateTime(n.createdAt)}</p>
             </div>
@@ -122,7 +127,8 @@ function AvisosPage() {
               </Button>
             )}
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {list.hasNextPage && (

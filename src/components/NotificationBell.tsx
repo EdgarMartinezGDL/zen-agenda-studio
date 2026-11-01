@@ -1,7 +1,7 @@
 import { fmtEnZona, ymdEnZona, zonaClinica } from "@/lib/zona-horaria";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { BadgeCheck, Ban, Bell, CalendarClock, CalendarPlus, CalendarX, CreditCard, Tag, TriangleAlert, X } from "lucide-react";
+import { BadgeCheck, Ban, Bell, CalendarClock, CalendarPlus, CalendarX, CreditCard, RotateCcw, Tag, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -23,6 +23,7 @@ const BILLING_ICON = {
   ACCOUNT_SUSPENDED: { Icon: Ban, className: "text-destructive" },
   PAYMENT_RECEIVED: { Icon: BadgeCheck, className: "text-status-confirmed" },
   PRICE_CHANGED: { Icon: Tag, className: "text-gold" },
+  DUPLICATE_CHARGE_REFUNDED: { Icon: RotateCcw, className: "text-status-confirmed" },
 } as const;
 
 // Un tipo que la app aún no conoce no rompe la lista: campana genérica.
