@@ -69,6 +69,14 @@ describe("Pagos access and clinic history", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Ver cobros" }));
     await waitFor(() => expect(state.payments).toHaveBeenCalledWith("org-1"));
   });
+  it.each(["PAID", "FAILED", "REFUNDED"] as const)("preserves invoice and amount for %s history", async status => {
+    state.payments.mockResolvedValue([{ id: "payment-1", status, amountCents: 12345, currency: "MXN", paidAt: null, createdAt: "2026-10-28T12:00:00Z", refundedAt: status === "REFUNDED" ? "2026-10-29T12:00:00Z" : null, failureText: null, invoiceUrl: "https://example.test/invoice-1" }]);
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Ver cobros" }));
+    const invoice = await screen.findByRole("link", { name: /Ver factura/ });
+    expect(invoice.getAttribute("href")).toBe("https://example.test/invoice-1");
+    expect(screen.getByText((12345 / 100).toLocaleString("es-MX", { style: "currency", currency: "MXN" }))).toBeTruthy();
+  });
 });
 
 describe("Price changes", () => {
