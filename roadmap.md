@@ -1,3 +1,8 @@
+# Reembolsos y avisos de cobros duplicados
+- [x] Agregar REFUNDED, fecha de reembolso y aviso DUPLICATE_CHARGE_REFUNDED exclusivamente en los cinco archivos indicados.
+- [x] Verificar regresiones de historial y marcado como leído sin cambiar botones nativos: 123 pruebas aprobadas y compilación correcta.
+- [ ] Verificar reembolsos y avisos reales: faltan dirección pública de MicroFix Cloud y sesiones profesional y Súper Admin.
+
 # Pagos del Súper Panel
 - [x] Agregar Clínicas, Precios y Códigos, menú de cinco opciones y prorrateo según el archivo entregado.
 - [x] Verificar contratos, permisos, límites y acciones: 98 pruebas aprobadas; /admin/pagos exige iniciar sesión, sin errores de ejecución.

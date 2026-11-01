@@ -18,6 +18,18 @@ export const money = (cents: number, currency = "MXN") =>
 export const longDate = (iso: string) =>
   new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
 
+export function paymentStatusLabel(p: BillingPayment): { text: string; className: string } {
+  if (p.status === "PAID") return { text: "Pagado", className: "text-status-confirmed" };
+  if (p.status === "REFUNDED") return {
+    text: `Reembolsado${p.refundedAt ? ` · el ${longDate(p.refundedAt)}` : ""}`,
+    className: "text-muted-foreground",
+  };
+  return {
+    text: `Rechazado${p.failureText ? ` · ${p.failureText}` : ""}`,
+    className: "text-status-cancelled",
+  };
+}
+
 const CYCLE_LABEL: Record<BillingCycle, string> = { MONTHLY: "Mensual", YEARLY: "Anual" };
 
 const STATUS_CHIP: Record<string, { label: string; className: string }> = {
@@ -290,13 +302,13 @@ function PaymentsList({ orgId }: { orgId: string }) {
 }
 
 function PaymentRow({ p }: { p: BillingPayment }) {
-  const paid = p.status === "PAID";
+  const status = paymentStatusLabel(p);
   return (
     <li className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 py-2 text-sm">
       <div className="min-w-0">
         <p className="font-medium">{longDate(p.paidAt ?? p.createdAt)}</p>
-        <p className={`text-xs ${paid ? "text-status-confirmed" : "text-status-cancelled"}`}>
-          {paid ? "Pagado" : `Rechazado${p.failureText ? ` · ${p.failureText}` : ""}`}
+        <p className={`text-xs ${status.className}`}>
+          {status.text}
         </p>
       </div>
       <div className="flex items-center gap-3">

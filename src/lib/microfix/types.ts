@@ -431,7 +431,8 @@ export type BillingNoticeKind =
   | 'SUSPENSION_TOMORROW'
   | 'ACCOUNT_SUSPENDED'
   | 'PAYMENT_RECEIVED'
-  | 'PRICE_CHANGED';
+  | 'PRICE_CHANGED'
+  | 'DUPLICATE_CHARGE_REFUNDED';
 
 /** Elemento de GET /notifications. Textos ya armados en la zona de la sede. */
 export interface AppNotification {
@@ -662,7 +663,7 @@ export interface KnowledgeDocumentList {
 /** Elemento de GET /admin/billing-notices: una clínica que pasó a SUSPENDED. */
 export interface AdminBillingNotice {
   id: string;
-  kind: BillingNoticeKind; // hoy siempre ACCOUNT_SUSPENDED
+  kind: BillingNoticeKind; // ACCOUNT_SUSPENDED o DUPLICATE_CHARGE_REFUNDED (cobro duplicado reembolsado / reembolso manual requerido)
   organizationId: string;
   organizationName: string;
   title: string;
@@ -705,7 +706,7 @@ export interface BillingSummary {
 /** Elemento de GET /billing/:org/payments (más recientes primero). */
 export interface BillingPayment {
   id: string;
-  status: 'PAID' | 'FAILED';
+  status: 'PAID' | 'FAILED' | 'REFUNDED';
   amountCents: number;
   currency: string;
   periodStart: string | null;
@@ -714,6 +715,7 @@ export interface BillingPayment {
   failureReason: string | null;
   failureText: string | null; // solo FAILED: texto listo para mostrar
   invoiceUrl: string | null;
+  refundedAt: string | null; // solo REFUNDED: cuándo se reembolsó
   createdAt: string;
 }
 

@@ -20,5 +20,6 @@
 
 - Billing notices use notificationsApi in the professional bell and adminApi inside AdminShell for /admin/avisos; keep their queries separate because the sessions have different scopes.
 - Super-admin payments use adminBillingApi inside AdminShell at /admin/pagos with admin-scoped queries; MicroFix Cloud owns Stripe operations and validation so no payment logic or private credentials are duplicated in the frontend.
+- Payment histories share paymentStatusLabel exported by SubscriptionCard so professional and admin payment states stay consistent.
 
 - Professional scheduling conversions and calendar arithmetic use src/lib/zona-horaria.ts with explicit location/clinic zones, so device timezone never changes captured instants or displayed dates.

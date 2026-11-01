@@ -54,7 +54,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); });
 
 describe("Professional billing notices", () => {
-  it.each(["PAYMENT_FAILED", "SUSPENSION_TOMORROW", "ACCOUNT_SUSPENDED", "PAYMENT_RECEIVED"] as const)("marks %s read without navigation or closing the bell", async billingKind => {
+  it.each(["PAYMENT_FAILED", "SUSPENSION_TOMORROW", "ACCOUNT_SUSPENDED", "PAYMENT_RECEIVED", "DUPLICATE_CHARGE_REFUNDED"] as const)("marks %s read without navigation or closing the bell", async billingKind => {
     state.list.mockResolvedValue({ items: [{ ...notice, billingKind }], nextCursor: null });
     mount(<NotificationBell orgId="org-1" autoOpen />);
     fireEvent.click(await screen.findByRole("button", { name: /Pago fallido/ }));
@@ -96,10 +96,10 @@ describe("Admin notice permissions and read state", () => {
     await waitFor(() => expect(state.navigate).toHaveBeenCalledWith({ to: "/login" }));
     expect(state.billingNotices).not.toHaveBeenCalled();
   });
-  it("marks a super-admin notice read and refreshes both notice queries", async () => {
+  it.each(["ACCOUNT_SUSPENDED", "DUPLICATE_CHARGE_REFUNDED"] as const)("marks a super-admin %s notice read and refreshes both notice queries", async kind => {
     state.user = { id: "admin-1", fullName: "Admin", email: "admin@example.test", role: "SUPER_ADMIN", organizationId: null };
     let read = false;
-    state.billingNotices.mockImplementation(async () => ({ items: [{ id: "admin-notice-1", kind: "ACCOUNT_SUSPENDED", organizationId: "org-1", organizationName: "Clínica X", title: "Cuenta suspendida", message: "Clínica X quedó suspendida.", createdAt: "2026-10-27T00:00:00Z", read, readAt: read ? "2026-10-27T01:00:00Z" : null }], nextCursor: null, unreadCount: read ? 0 : 1 }));
+    state.billingNotices.mockImplementation(async () => ({ items: [{ id: "admin-notice-1", kind, organizationId: "org-1", organizationName: "Clínica X", title: "Cuenta suspendida", message: "Clínica X quedó suspendida.", createdAt: "2026-10-27T00:00:00Z", read, readAt: read ? "2026-10-27T01:00:00Z" : null }], nextCursor: null, unreadCount: read ? 0 : 1 }));
     state.markBillingNoticeRead.mockImplementation(async () => { read = true; return { id: "admin-notice-1", read: true }; });
     const client = mountAdmin();
     const invalidate = vi.spyOn(client, "invalidateQueries");
