@@ -1,6 +1,6 @@
 # Confirmaciones al agendar y reagendar
 - [x] Separar confirmación de horario y aumento de cupo, conservando formulario, botones y zona horaria.
-- [ ] Verificar contratos y reintentos con pruebas, incluida limpieza al cambiar fecha/hora y cerrar.
+- [x] Verificar contratos, ambos órdenes de reintento, errores ajenos y limpieza al cambiar fecha/hora y cerrar: 141 pruebas aprobadas; compilación correcta.
 - [ ] Verificar guardado real: faltan dirección pública de MicroFix Cloud y sesión profesional.
 
 # Reembolsos y avisos de cobros duplicados
