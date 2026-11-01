@@ -274,6 +274,16 @@ export interface SlotFullError {
   slotFull: { capacity: number; bookedCount: number; suggestedCapacity: number };
 }
 
+/** 409 de POST /appointments o PATCH /appointments/:id/reschedule: la cita necesita confirmación. */
+export type ScheduleReason = 'IN_PAST' | 'OUTSIDE_SCHEDULE' | 'OVERLAP';
+export interface ScheduleConfirmationError {
+  statusCode: 409;
+  error: 'Conflict';
+  /** Texto listo para mostrar; ya termina en "¿Agendar de todos modos?". */
+  message: string;
+  needsConfirmation: { reasons: ScheduleReason[] };
+}
+
 // --- Horarios de atención ------------------------------------------------------
 
 export interface BusinessHour {

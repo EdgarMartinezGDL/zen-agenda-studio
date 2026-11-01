@@ -12,7 +12,7 @@ import { Modal } from "@/components/Modal";
 import { appointmentsApi, organizationApi } from "@/lib/microfix/api";
 import { useAuth } from "@/lib/microfix/auth";
 import { ApiError } from "@/lib/microfix/client";
-import type { SlotFullError } from "@/lib/microfix/types";
+import type { ScheduleConfirmationError, SlotFullError } from "@/lib/microfix/types";
 import { errorText } from "@/lib/microfix-ui";
 import type { Appointment, AppointmentStatus, OrganizationContext } from "@/types";
 
@@ -218,12 +218,14 @@ function DetailModal({
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [needsForce, setNeedsForce] = useState(false);
   const [confirm, setConfirm] = useState<"attended" | "noshow" | "reschedule" | null>(null);
 
   const close = () => {
     setView("detail");
     setConfirm(null);
     setError(null);
+    setNeedsForce(false);
     onClose();
   };
 
@@ -251,7 +253,7 @@ function DetailModal({
   });
 
   const rescheduleM = useMutation({
-    mutationFn: () => {
+    mutationFn: (force: boolean) => {
       if (!appointment) throw new Error("No hay cita seleccionada");
       const start = aInstante(date, time, zc);
       const duration =
@@ -259,10 +261,15 @@ function DetailModal({
       return appointmentsApi.reschedule(appointment.id, {
         startAt: start.toISOString(),
         endAt: new Date(start.getTime() + duration).toISOString(),
-      });
+      }, force);
     },
     onSuccess: onDone,
-    onError: (e: Error) => setError(errorText(e)),
+    onError: (e: Error) => {
+      const body = e instanceof ApiError && e.status === 409
+        ? e.body as ScheduleConfirmationError | undefined : undefined;
+      setError(body?.needsConfirmation ? body.message : errorText(e));
+      setNeedsForce(!!body?.needsConfirmation);
+    },
   });
 
   const dayAppts = useQuery({
@@ -371,10 +378,10 @@ function DetailModal({
           </div>
 
           <Field label="Nueva fecha">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+            <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setNeedsForce(false); setError(null); }} className={inputCls} />
           </Field>
           <Field label="Nueva hora">
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputCls} />
+            <input type="time" value={time} onChange={(e) => { setTime(e.target.value); setNeedsForce(false); setError(null); }} className={inputCls} />
           </Field>
           {hasCollision && (
             <p className="rounded-xl border border-status-pending/40 bg-status-pending-bg px-3 py-2 text-base font-semibold text-status-pending">
@@ -383,11 +390,19 @@ function DetailModal({
           )}
           <button
             disabled={!date || !time || rescheduleM.isPending}
-            onClick={() => rescheduleM.mutate()}
+            onClick={() => rescheduleM.mutate(false)}
             className="w-full btn-primary px-5 py-3.5 text-lg font-bold text-primary-foreground disabled:opacity-60"
           >
             Confirmar nueva fecha
           </button>
+          {needsForce && (
+            <button
+              onClick={() => rescheduleM.mutate(true)}
+              className="w-full rounded-md border border-border px-3 py-2 text-sm font-semibold text-gold"
+            >
+              Reagendar de todos modos
+            </button>
+          )}
         </div>
       )}
 
@@ -483,6 +498,17 @@ function NewAppointmentModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [askOptional, setAskOptional] = useState(false);
+  const [lastFlags, setLastFlags] = useState({ raise: false, force: false });
+  const [conflictType, setConflictType] = useState<"slotFull" | "needsConfirmation" | null>(null);
+
+  const clearConfirmation = () => {
+    setConflictType(null);
+    setLastFlags({ raise: false, force: false });
+  };
+  const close = () => {
+    clearConfirmation();
+    onClose();
+  };
 
   const isValid =
     !!form.clientName.trim() &&
@@ -499,7 +525,7 @@ function NewAppointmentModal({
       setAskOptional(true);
       return;
     }
-    create.mutate(false);
+    create.mutate({ raise: false, force: false });
   };
 
   const { data: context } = useQuery({
@@ -509,7 +535,8 @@ function NewAppointmentModal({
   });
 
   const create = useMutation({
-    mutationFn: (force: boolean) => {
+    mutationFn: ({ raise, force }: { raise: boolean; force: boolean }) => {
+      setLastFlags({ raise, force });
       const service = context?.services.find((s) => s.id === form.serviceId);
       const start = aInstante(form.date, form.time, zonaDeSede(context?.locations, form.locationId));
       const end = new Date(start.getTime() + (service?.durationMinutes ?? 30) * 60000);
@@ -525,22 +552,33 @@ function NewAppointmentModal({
           startAt: start.toISOString(),
           endAt: end.toISOString(),
         },
+        raise,
         force,
       );
     },
-    onSuccess: onDone,
+    onSuccess: () => {
+      clearConfirmation();
+      onDone();
+    },
     onError: (e: Error) => {
-      const full = e instanceof ApiError ? (e.body as SlotFullError | undefined)?.slotFull : undefined;
-      setError(
-        full
-          ? `Horario lleno (${full.bookedCount}/${full.capacity}). ¿Agendar de todos modos subiendo el cupo a ${full.suggestedCapacity}?`
-          : errorText(e),
-      );
+      const body = e instanceof ApiError && e.status === 409
+        ? e.body as Partial<ScheduleConfirmationError & SlotFullError> | undefined : undefined;
+      if (body?.needsConfirmation) {
+        setError(body.message ?? e.message);
+        setConflictType("needsConfirmation");
+      } else if (body?.slotFull) {
+        const full = body.slotFull;
+        setError(`Horario lleno (${full.bookedCount}/${full.capacity}). ¿Agendar de todos modos subiendo el cupo a ${full.suggestedCapacity}?`);
+        setConflictType("slotFull");
+      } else {
+        setError(errorText(e));
+        setConflictType(null);
+      }
     },
   });
 
   return (
-    <Modal open={open} onClose={onClose} title="Nueva cita" size="lg">
+    <Modal open={open} onClose={close} title="Nueva cita" size="lg">
       {error && <Banner kind="error" message={error} />}
       <div className="space-y-3">
         <Field label="Cliente *">
@@ -635,9 +673,11 @@ function NewAppointmentModal({
         >
           Agendar cita
         </button>
-        {create.error && (create.error as { status?: number }).status === 409 && (
+        {(conflictType === "needsConfirmation" || conflictType === "slotFull") && (
           <button
-            onClick={() => create.mutate(true)}
+            onClick={() => create.mutate(conflictType === "needsConfirmation"
+              ? { raise: lastFlags.raise, force: true }
+              : { raise: true, force: lastFlags.force })}
             className="w-full rounded-md border border-border px-3 py-2 text-sm font-semibold text-gold"
           >
             Agendar de todos modos
@@ -664,7 +704,7 @@ function NewAppointmentModal({
           <button
             onClick={() => {
               setAskOptional(false);
-              create.mutate(false);
+              create.mutate({ raise: false, force: false });
             }}
             className="flex-1 btn-primary px-5 py-3.5 text-lg font-bold text-primary-foreground"
           >
