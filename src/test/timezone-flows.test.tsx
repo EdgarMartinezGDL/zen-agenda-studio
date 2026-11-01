@@ -52,7 +52,7 @@ it("captures a new appointment in the selected sede timezone", async () => {
   fireEvent.change(screen.getByLabelText("Hora *"), { target: { value: "09:00" } });
   fireEvent.change(screen.getByLabelText("Notas (opcional)"), { target: { value: "Consulta" } });
   fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
-  await waitFor(() => expect(state.create).toHaveBeenCalledWith(expect.objectContaining({ startAt: "2026-10-30T14:00:00.000Z", endAt: "2026-10-30T14:30:00.000Z" }), false));
+  await waitFor(() => expect(state.create).toHaveBeenCalledWith(expect.objectContaining({ startAt: "2026-10-30T14:00:00.000Z", endAt: "2026-10-30T14:30:00.000Z" }), false, false));
 });
 
 it("prefills rescheduling and checks collisions using the appointment sede day", async () => {
@@ -65,7 +65,7 @@ it("prefills rescheduling and checks collisions using the appointment sede day",
   await waitFor(() => expect(state.appointments).toHaveBeenCalledWith({ organizationId: "org-1", from: "2026-10-30T05:00:00.000Z", to: "2026-10-31T04:59:59.999Z" }));
   fireEvent.change(screen.getByLabelText("Nueva hora"), { target: { value: "10:00" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
-  await waitFor(() => expect(state.reschedule).toHaveBeenCalledWith("a-1", { startAt: "2026-10-30T15:00:00.000Z", endAt: "2026-10-30T15:30:00.000Z" }));
+  await waitFor(() => expect(state.reschedule).toHaveBeenCalledWith("a-1", { startAt: "2026-10-30T15:00:00.000Z", endAt: "2026-10-30T15:30:00.000Z" }, false));
 });
 
 it("edits event fields in sede time and submits the real UTC instant", async () => {

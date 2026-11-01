@@ -135,11 +135,12 @@ export const appointmentsApi = {
     ),
   get: (id: string) => apiRequest<AppointmentWithRelations>(`/appointments/${id}`),
   /**
-   * 409 con cuerpo SlotFullError si el horario está lleno: ofrecer
-   * "agendar de todos modos" y reintentar con raiseCapacityIfFull = true.
+   * 409 con slotFull si el horario está lleno: reintentar con raiseCapacityIfFull.
+   * 409 con needsConfirmation si está fuera de horario, en el pasado o encimada:
+   * mostrar el mensaje del backend y reintentar con force.
    */
-  create: (data: CreateAppointmentInput, raiseCapacityIfFull = false) =>
-    apiRequest<Appointment>(`/appointments${raiseCapacityIfFull ? '?raiseCapacityIfFull=true' : ''}`, {
+  create: (data: CreateAppointmentInput, raiseCapacityIfFull = false, force = false) =>
+    apiRequest<Appointment>(`/appointments${qs({ raiseCapacityIfFull: raiseCapacityIfFull || undefined, force: force || undefined })}`, {
       method: 'POST',
       body: data,
     }),
@@ -149,8 +150,8 @@ export const appointmentsApi = {
       body: { reason },
     }),
   /** Solo citas PENDING o CONFIRMED. */
-  reschedule: (id: string, data: { startAt: string; endAt: string; locationId?: string | null }) =>
-    apiRequest<Appointment>(`/appointments/${id}/reschedule?by=PROFESSIONAL`, {
+  reschedule: (id: string, data: { startAt: string; endAt: string; locationId?: string | null }, force = false) =>
+    apiRequest<Appointment>(`/appointments/${id}/reschedule?by=PROFESSIONAL${force ? '&force=true' : ''}`, {
       method: 'PATCH',
       body: data,
     }),

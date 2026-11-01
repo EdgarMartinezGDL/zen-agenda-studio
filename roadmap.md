@@ -1,3 +1,8 @@
+# Confirmaciones al agendar y reagendar
+- [x] Separar confirmación de horario y aumento de cupo, conservando formulario, botones y zona horaria.
+- [ ] Verificar contratos y reintentos con pruebas, incluida limpieza al cambiar fecha/hora y cerrar.
+- [ ] Verificar guardado real: faltan dirección pública de MicroFix Cloud y sesión profesional.
+
 # Reembolsos y avisos de cobros duplicados
 - [x] Agregar REFUNDED, fecha de reembolso y aviso DUPLICATE_CHARGE_REFUNDED exclusivamente en los cinco archivos indicados.
 - [x] Verificar regresiones de historial y marcado como leído sin cambiar botones nativos: 123 pruebas aprobadas y compilación correcta.
