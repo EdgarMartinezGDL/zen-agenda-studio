@@ -83,6 +83,29 @@ it("never offers an override for an unrelated 409", async () => {
   expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull();
 });
 
+it("clears creation confirmation on close and restarts with neither flag", async () => {
+  state.create.mockRejectedValueOnce(confirmation).mockRejectedValueOnce(full);
+  await fillNewAppointment();
+  fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Agendar de todos modos" }));
+  await screen.findByText(/Horario lleno \(2\/2\)/);
+  fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Nueva cita" }));
+  expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
+  await waitFor(() => expect(state.create).toHaveBeenCalledTimes(3));
+  expect(state.create.mock.calls[2]?.slice(1)).toEqual([false, false]);
+});
+
+it("removes a previous creation override for an unrelated error", async () => {
+  state.create.mockRejectedValueOnce(full).mockRejectedValueOnce(new ApiError("Otro conflicto", 409));
+  await fillNewAppointment();
+  fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Agendar de todos modos" }));
+  await screen.findByText("Otro conflicto");
+  expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull();
+});
+
 async function openReschedule() {
   mount(Agenda);
   fireEvent.click(await screen.findByRole("button", { name: /Ana/ }));
@@ -118,6 +141,21 @@ it("clears force after a non-confirmation reschedule error", async () => {
   fireEvent.click(await screen.findByRole("button", { name: "Reagendar de todos modos" }));
   await screen.findByText("Otro conflicto");
   expect(screen.queryByRole("button", { name: "Reagendar de todos modos" })).toBeNull();
+});
+
+it("clears reschedule confirmation on close", async () => {
+  state.reschedule.mockRejectedValueOnce(confirmation);
+  await openReschedule();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  await screen.findByRole("button", { name: "Reagendar de todos modos" });
+  fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+  fireEvent.click(screen.getByRole("button", { name: /Ana/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Reagendar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reagendar Cita" }));
+  expect(screen.queryByRole("button", { name: "Reagendar de todos modos" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  await waitFor(() => expect(state.reschedule).toHaveBeenCalledTimes(2));
+  expect(state.reschedule.mock.calls[1]?.[2]).toBe(false);
 });
 
 it("captures a new appointment in the selected sede timezone", async () => {
