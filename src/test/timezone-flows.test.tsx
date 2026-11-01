@@ -16,6 +16,7 @@ vi.mock("@/lib/microfix/api", () => ({
 import { Route as Agenda } from "@/routes/index";
 import { Route as Eventos } from "@/routes/eventos";
 import { Route as Reportes } from "@/routes/reportes";
+import { ApiError } from "@/lib/microfix/client";
 
 const clients: QueryClient[] = [];
 function mount(route: typeof Agenda | typeof Eventos | typeof Reportes) {
@@ -37,6 +38,87 @@ beforeEach(() => {
   state.report.mockResolvedValue(null);
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); });
+
+async function fillNewAppointment() {
+  mount(Agenda);
+  await screen.findByRole("button", { name: /Ana/ });
+  fireEvent.click(screen.getByRole("button", { name: "Nueva cita" }));
+  fireEvent.change(screen.getByLabelText("Cliente *"), { target: { value: "Laura" } });
+  fireEvent.change(screen.getByLabelText("Teléfono *"), { target: { value: "+525555555555" } });
+  fireEvent.change(screen.getByLabelText("Edad (opcional)"), { target: { value: "25" } });
+  await screen.findByRole("option", { name: "Cancún" });
+  fireEvent.change(screen.getByLabelText("Ubicación *"), { target: { value: "loc-1" } });
+  fireEvent.change(screen.getByLabelText("Servicio (opcional)"), { target: { value: "svc-1" } });
+  fireEvent.change(screen.getByLabelText("Fecha *"), { target: { value: "2026-10-30" } });
+  fireEvent.change(screen.getByLabelText("Hora *"), { target: { value: "09:00" } });
+  fireEvent.change(screen.getByLabelText("Notas (opcional)"), { target: { value: "Consulta" } });
+}
+
+const confirmation = new ApiError("Confirmación requerida", 409, { message: "Fuera de horario. ¿Agendar de todos modos?", needsConfirmation: { reasons: ["OUTSIDE_SCHEDULE"] } });
+const full = new ApiError("Horario lleno", 409, { slotFull: { bookedCount: 2, capacity: 2, suggestedCapacity: 3 } });
+
+it.each(["confirmation-first", "capacity-first"])("preserves both flags across sequential confirmations: %s", async order => {
+  state.create.mockRejectedValueOnce(order === "confirmation-first" ? confirmation : full)
+    .mockRejectedValueOnce(order === "confirmation-first" ? full : confirmation);
+  await fillNewAppointment();
+  fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Agendar de todos modos" }));
+  await waitFor(() => expect(state.create).toHaveBeenCalledTimes(2));
+  expect(state.create.mock.calls[1]?.slice(1)).toEqual(order === "confirmation-first" ? [false, true] : [true, false]);
+  await waitFor(() => expect(state.create.mock.results[1]?.type).toBe("return"));
+  await screen.findByText(order === "confirmation-first" ? /Horario lleno \(2\/2\)/ : /Fuera de horario/);
+  fireEvent.click(screen.getByRole("button", { name: "Agendar de todos modos" }));
+  await waitFor(() => expect(state.create).toHaveBeenCalledTimes(3));
+  expect(state.create.mock.calls[2]?.slice(1)).toEqual([true, true]);
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Nueva cita" }));
+  expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull();
+});
+
+it("never offers an override for an unrelated 409", async () => {
+  state.create.mockRejectedValueOnce(new ApiError("Conflicto distinto", 409));
+  await fillNewAppointment();
+  fireEvent.click(screen.getByRole("button", { name: "Agendar cita" }));
+  await screen.findByText("Conflicto distinto");
+  expect(screen.queryByRole("button", { name: "Agendar de todos modos" })).toBeNull();
+});
+
+async function openReschedule() {
+  mount(Agenda);
+  fireEvent.click(await screen.findByRole("button", { name: /Ana/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Reagendar" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reagendar Cita" }));
+}
+
+it("only forces rescheduling after backend confirmation", async () => {
+  state.reschedule.mockRejectedValueOnce(confirmation);
+  await openReschedule();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Reagendar de todos modos" }));
+  await waitFor(() => expect(state.reschedule).toHaveBeenCalledTimes(2));
+  expect(state.reschedule.mock.calls.map(call => call[2])).toEqual([false, true]);
+});
+
+it.each(["Nueva fecha", "Nueva hora"])("clears reschedule confirmation after changing %s", async label => {
+  state.reschedule.mockRejectedValueOnce(confirmation);
+  await openReschedule();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  await screen.findByRole("button", { name: "Reagendar de todos modos" });
+  fireEvent.change(screen.getByLabelText(label), { target: { value: label === "Nueva fecha" ? "2026-10-31" : "10:00" } });
+  expect(screen.queryByRole("button", { name: "Reagendar de todos modos" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  await waitFor(() => expect(state.reschedule).toHaveBeenCalledTimes(2));
+  expect(state.reschedule.mock.calls[1]?.[2]).toBe(false);
+});
+
+it("clears force after a non-confirmation reschedule error", async () => {
+  state.reschedule.mockRejectedValueOnce(confirmation).mockRejectedValueOnce(new ApiError("Otro conflicto", 409));
+  await openReschedule();
+  fireEvent.click(screen.getByRole("button", { name: "Confirmar nueva fecha" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Reagendar de todos modos" }));
+  await screen.findByText("Otro conflicto");
+  expect(screen.queryByRole("button", { name: "Reagendar de todos modos" })).toBeNull();
+});
 
 it("captures a new appointment in the selected sede timezone", async () => {
   mount(Agenda);
