@@ -39,7 +39,7 @@ export interface AuthUser {
 }
 
 export interface LoginResponse {
-  access_token: string; // JWT, vence en 8 h
+  access_token: string; // JWT, vence en 30 días (o en 8 h si el usuario lo activó)
   user: AuthUser;
 }
 
@@ -47,6 +47,8 @@ export interface LoginResponse {
 export interface AuthProfile extends AuthUser {
   createdAt: string;
   updatedAt: string;
+  /** true = el usuario activó que su sesión se cierre a las 8 horas. */
+  shortSession: boolean;
 }
 
 // --- Organización ------------------------------------------------------------
