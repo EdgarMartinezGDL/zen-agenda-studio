@@ -65,6 +65,13 @@ export const authApi = {
       method: 'PATCH',
       body: { currentPassword, newPassword }, // newPassword: mínimo 8 caracteres
     }),
+  /** Cierra esta sesión en el servidor (solo este dispositivo). */
+  logout: () => apiRequest<{ message: string }>('/auth/logout', { method: 'POST' }),
+  setShortSession: (shortSession: boolean) =>
+    apiRequest<{ shortSession: boolean }>('/auth/session-preference', {
+      method: 'PATCH',
+      body: { shortSession },
+    }),
 };
 
 // --- Organización ------------------------------------------------------------

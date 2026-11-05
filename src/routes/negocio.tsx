@@ -1420,7 +1420,7 @@ function SettingsTab({ orgId, confirming }: { orgId: string; confirming: boolean
     { key: "ia" as const, title: "Asistente de IA", desc: "Nombre, tono y mensajes automáticos." },
     { key: "marca" as const, title: "Marca", desc: "Tema, colores, tipografía y logo." },
     { key: "politica" as const, title: "Política de cancelación", desc: "Plazos y penalizaciones." },
-    { key: "cuenta" as const, title: "Mi Cuenta", desc: "Correo de acceso y contraseña." },
+    { key: "cuenta" as const, title: "Mi Cuenta", desc: "Correo de acceso, contraseña y sesión." },
   ];
 
 
@@ -1787,6 +1787,16 @@ function AccountModal({ onClose }: { onClose: () => void }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
+  const qc = useQueryClient();
+  const sessionPref = useMutation({
+    mutationFn: (enabled: boolean) => authApi.setShortSession(enabled),
+    onSuccess: (r) => {
+      setError(null);
+      qc.setQueryData(["auth-me"], (old: typeof profile) => (old ? { ...old, shortSession: r.shortSession } : old));
+      toast.success(r.shortSession ? "Tu sesión se cerrará a las 8 horas" : "Tu sesión durará 30 días");
+    },
+    onError: (e: Error) => setError(errorText(e)),
+  });
 
   const valid =
     current.length > 0 && next.length >= 8 && confirm.length > 0 && next === confirm;
@@ -1858,6 +1868,24 @@ function AccountModal({ onClose }: { onClose: () => void }) {
             Actualizar contraseña
           </button>
         </section>
+
+        {profile && (
+          <section className="card-zen space-y-2 p-5">
+            <h3 className="text-lg font-bold">Duración de la sesión</h3>
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={profile.shortSession}
+                disabled={sessionPref.isPending}
+                onChange={(e) => sessionPref.mutate(e.target.checked)}
+              />
+              Cerrar mi sesión a las 8 horas
+            </label>
+            <p className="text-sm text-muted-foreground">
+              Normalmente tu sesión dura 30 días. Actívalo si usas una computadora compartida.
+            </p>
+          </section>
+        )}
       </div>
     </Modal>
   );
