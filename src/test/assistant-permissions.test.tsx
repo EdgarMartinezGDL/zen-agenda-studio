@@ -97,6 +97,7 @@ it("retains PROFESSIONAL configuration and plan access", async () => {
   state.role = "PROFESSIONAL";
   mount(page(Negocio));
   fireEvent.click(screen.getByRole("button", { name: "Configuración" }));
+  await screen.findByRole("button", { name: "Activar notificaciones" });
   expect(state.subscription).toHaveBeenCalled();
   expect(state.plan).toHaveBeenCalled();
   expect(state.banner).toHaveBeenCalled();
