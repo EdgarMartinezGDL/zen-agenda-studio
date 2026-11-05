@@ -44,6 +44,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, ready, logout: endSession } = useAuth();
   // El Súper Admin no tiene organización: su lugar es el Súper Panel (/admin).
   const isAdmin = user?.role === "SUPER_ADMIN";
+  const isAssistant = user?.role === "ASSISTANT";
+  // La asistente solo usa de esa sección su propia cuenta.
+  const nav = NAV.map((item) =>
+    isAssistant && item.to === "/negocio" ? { ...item, label: "Mi Cuenta" } : item,
+  );
   const checked = ready && !!user && !isAdmin;
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [bellAutoOpen, setBellAutoOpen] = useState<null | "desktop" | "mobile">(null);
@@ -125,7 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BusinessBrand name={businessName} logoUrl={org?.logoUrl} nameSize={headerNameSize} />
         </div>
         <nav className="mt-6 flex flex-1 flex-col gap-1">
-          {NAV.map(({ to, label, icon: Icon }) => (
+          {nav.map(({ to, label, icon: Icon }) => (
             <Link
               key={to}
               to={to}
@@ -202,13 +207,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="px-4 pt-4 pb-28 md:ml-64 md:px-8 md:py-8">
-        {orgId && !isAdmin && <SubscriptionBanner orgId={orgId} />}
+        {orgId && !isAdmin && !isAssistant && <SubscriptionBanner orgId={orgId} />}
+        {isAssistant && org?.accessSuspended && (
+          <div role="alert" className="mb-4 rounded-md bg-status-cancelled-bg px-4 py-3 text-sm font-semibold text-status-cancelled">
+            El acceso de la clínica está suspendido. Consulta con el titular de la cuenta.
+          </div>
+        )}
         {children}
       </main>
 
       {/* Bottom nav móvil */}
       <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
-        {NAV.map(({ to, label, icon: Icon }) => {
+        {nav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link

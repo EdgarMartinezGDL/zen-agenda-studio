@@ -1,3 +1,8 @@
+# Permisos de asistentes
+- [x] Aplicar únicamente los cambios entregados de cuenta, suspensión, push y reportes para ASSISTANT.
+- [ ] Verificar regresiones de acceso y exportaciones, conservando los otros roles.
+- [ ] Verificar con sesión real de asistente: falta sesión disponible de MicroFix Cloud.
+
 # Confirmaciones al agendar y reagendar
 - [x] Separar confirmación de horario y aumento de cupo, conservando formulario, botones y zona horaria.
 - [x] Verificar contratos, ambos órdenes de reintento, errores ajenos y limpieza al cambiar fecha/hora y cerrar: 141 pruebas aprobadas; compilación correcta.
