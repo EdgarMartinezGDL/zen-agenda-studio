@@ -419,8 +419,8 @@ export interface Report {
   };
   topServices: { serviceId: string | null; name: string | null; count: number }[];
   slotOccupancy: { totalCapacity: number; totalBooked: number; rate: number };
-  events?: { total: number; registrations: { total: number; cancelled: number } };
-  revenue?: { total: number }; // suma del precio de las citas ASISTIO del rango
+  events: { total: number; registrations: { total: number; cancelled: number } };
+  revenue: { total: number }; // suma del precio de las citas ASISTIO del rango
 }
 
 // --- Errores -------------------------------------------------------------------
