@@ -69,7 +69,6 @@ const inputCls =
 
 function ReportesPage() {
   const orgId = useAuth().user?.organizationId ?? "";
-  const isAssistant = useAuth().user?.role === "ASSISTANT";
   const [range, setRange] = useState<RangeKey>("30");
   const [customFromValue, setCustomFrom] = useState("");
   const [customToValue, setCustomTo] = useState("");
@@ -148,7 +147,7 @@ function ReportesPage() {
 
     // Sin filtros de ubicación/servicio, los totales salen del reporte del backend.
     const unfiltered = locationId === "all" && serviceId === "all" && !!report;
-    if (unfiltered && report.revenue) revenue = report.revenue.total;
+    if (unfiltered) revenue = report.revenue.total;
     const done = byStatus.COMPLETED + byStatus.ASISTIO;
     return {
       byStatus,
@@ -175,7 +174,7 @@ function ReportesPage() {
       Servicio: a.service?.name ?? "Sin servicio",
       Ubicación: a.location?.name ?? "Sin ubicación",
       Estado: STATUS_ES[a.status],
-      ...(isAssistant ? {} : { Monto: a.status === "CANCELLED" ? 0 : priceOf(a) }),
+      Monto: a.status === "CANCELLED" ? 0 : priceOf(a),
     }));
 
   const downloadExcel = async () => {
@@ -191,7 +190,7 @@ function ReportesPage() {
         ["Servicio", serviceLabel],
         ["Citas totales", metrics.total],
         ["Citas realizadas", metrics.done],
-        ...(isAssistant ? [] : [["Total de ingresos (MXN)", metrics.revenue]]),
+        ["Total de ingresos (MXN)", metrics.revenue],
       ];
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(meta), "Resumen");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportRows()), "Citas");
@@ -213,7 +212,7 @@ function ReportesPage() {
         [
           `Periodo: ${rangeLabel} (${inicio} a ${fin})`,
           `Ubicación: ${locationLabel} · Servicio: ${serviceLabel}`,
-          `Citas totales: ${metrics.total} · Realizadas: ${metrics.done}${isAssistant ? "" : ` · Ingresos: ${money(metrics.revenue)}`}`,
+          `Citas totales: ${metrics.total} · Realizadas: ${metrics.done} · Ingresos: ${money(metrics.revenue)}`,
         ],
         14,
         26,
@@ -221,7 +220,7 @@ function ReportesPage() {
       const data = exportRows();
       autoTable(doc, {
         startY: 44,
-        head: [["Fecha", "Paciente", "Teléfono", "Servicio", "Ubicación", "Estado", ...(isAssistant ? [] : ["Monto"])]],
+        head: [["Fecha", "Paciente", "Teléfono", "Servicio", "Ubicación", "Estado", "Monto"]],
         body: data.map((r) => [
           r.Fecha,
           r.Paciente,
@@ -229,7 +228,7 @@ function ReportesPage() {
           r.Servicio,
           r.Ubicación,
           r.Estado,
-          ...(isAssistant ? [] : [money(r.Monto ?? 0)]),
+          money(r.Monto),
         ]),
         styles: { fontSize: 8 },
         headStyles: { fillColor: [15, 118, 110] },
@@ -328,7 +327,7 @@ function ReportesPage() {
             <Tile label="Citas totales" value={metrics.total} />
             <Tile label="Citas realizadas" value={metrics.done} />
             <Tile label="Canceladas" value={metrics.byStatus.CANCELLED} />
-            {!isAssistant && <Tile label="Total de ingresos" value={money(metrics.revenue)} />}
+            <Tile label="Total de ingresos" value={money(metrics.revenue)} />
           </div>
 
           <Section title="Citas por estado">
@@ -364,11 +363,9 @@ function ReportesPage() {
                       <p className="text-xs font-semibold text-muted-foreground">
                         {STATUS_ES[a.status]}
                       </p>
-                      {!isAssistant && (
-                        <p className="font-semibold">
-                          {a.status === "CANCELLED" ? "—" : money(priceOf(a))}
-                        </p>
-                      )}
+                      <p className="font-semibold">
+                        {a.status === "CANCELLED" ? "—" : money(priceOf(a))}
+                      </p>
                     </div>
                   </li>
                 ))}
