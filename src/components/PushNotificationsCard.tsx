@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/Banner";
 import { ApiError } from "@/lib/microfix/client";
 import { organizationApi, pushApi } from "@/lib/microfix/api";
+import { useAuth } from "@/lib/microfix/auth";
 import { useBillingSummary } from "@/components/SubscriptionCard";
 import { disablePush, enablePush, getPushState, type PushState } from "@/lib/microfix/push";
 import { errorText } from "@/lib/microfix-ui";
@@ -15,12 +16,13 @@ import { errorText } from "@/lib/microfix-ui";
 // Fase 6, 6.6.6: cualquier plan (y la cuenta SUSPENDED) puede activarlo; sin
 // push en el plan o suspendida solo recibe los avisos de cobro.
 export function PushNotificationsCard({ orgId }: { orgId: string }) {
+  const isAssistant = useAuth().user?.role === "ASSISTANT";
   const { data: features } = useQuery({
     queryKey: ["plan-features", orgId],
     queryFn: () => organizationApi.planFeatures(orgId),
     enabled: !!orgId,
   });
-  const { data: billing } = useBillingSummary(orgId);
+  const { data: billing } = useBillingSummary(isAssistant ? "" : orgId);
   const billingOnly = features?.pushEnabled === false || billing?.status === "SUSPENDED";
   const [state, setState] = useState<PushState | null>(null);
   // El backend sin llaves VAPID responde 503: la tarjeta no se muestra.
@@ -41,6 +43,7 @@ export function PushNotificationsCard({ orgId }: { orgId: string }) {
   }, []);
 
   if (!available || state === null) return null;
+  if (isAssistant && features?.pushEnabled === false) return null;
 
   const activate = async () => {
     setBusy(true);

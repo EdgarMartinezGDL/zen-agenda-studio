@@ -85,6 +85,7 @@ function NegocioPage() {
   const [tab, setTab] = useState<Tab>(seccion || pago ? "Configuración" : "Ubicaciones");
   const [confirming, setConfirming] = useState(false);
   const orgId = useAuth().user?.organizationId ?? "";
+  const isAssistant = useAuth().user?.role === "ASSISTANT";
 
   // "Mi plan" vive en Configuración: se abre esa pestaña y se baja hasta la tarjeta.
   useEffect(() => {
@@ -100,6 +101,15 @@ function NegocioPage() {
     navigate({ to: "/negocio", search: {}, replace: true });
     return () => clearTimeout(t);
   }, [seccion, pago, navigate]);
+
+  if (isAssistant) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <h1 className="mb-4 text-2xl font-bold tracking-tight">Mi Cuenta</h1>
+        <SettingsTab orgId={orgId} confirming={false} assistant />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -1413,7 +1423,7 @@ function SlotsTab({ orgId }: { orgId: string }) {
 
 /* ---------------- Configuración ---------------- */
 
-function SettingsTab({ orgId, confirming }: { orgId: string; confirming: boolean }) {
+function SettingsTab({ orgId, confirming, assistant = false }: { orgId: string; confirming: boolean; assistant?: boolean }) {
   const [open, setOpen] = useState<null | "ia" | "marca" | "politica" | "cuenta">(null);
 
   const cards = [
@@ -1422,12 +1432,13 @@ function SettingsTab({ orgId, confirming }: { orgId: string; confirming: boolean
     { key: "politica" as const, title: "Política de cancelación", desc: "Plazos y penalizaciones." },
     { key: "cuenta" as const, title: "Mi Cuenta", desc: "Correo de acceso, contraseña y sesión." },
   ];
+  const visibleCards = assistant ? cards.filter((c) => c.key === "cuenta") : cards;
 
 
   return (
     <>
       <CardList>
-        {cards.map((c) => (
+        {visibleCards.map((c) => (
           <li key={c.key}>
             <button onClick={() => setOpen(c.key)} className="card-zen w-full p-4 text-left hover:bg-accent/40">
               <p className="font-semibold">{c.title}</p>
@@ -1437,8 +1448,8 @@ function SettingsTab({ orgId, confirming }: { orgId: string; confirming: boolean
         ))}
       </CardList>
 
-      <SubscriptionCard orgId={orgId} confirming={confirming} />
-      <PlanCard orgId={orgId} />
+      {!assistant && <SubscriptionCard orgId={orgId} confirming={confirming} />}
+      {!assistant && <PlanCard orgId={orgId} />}
       <PushNotificationsCard orgId={orgId} />
 
       {open === "ia" && <AIModal orgId={orgId} onClose={() => setOpen(null)} />}

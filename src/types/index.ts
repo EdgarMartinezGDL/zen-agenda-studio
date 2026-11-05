@@ -161,6 +161,8 @@ export interface Organization {
   headerName?: string | null;
   /** Tamaño forzado del nombre en la cabecera. */
   headerNameSize?: "sm" | "md" | "lg" | null;
+  /** Solo llega a la asistente: true = el acceso de la clínica está suspendido. */
+  accessSuspended?: boolean;
 }
 
 export interface Report {
