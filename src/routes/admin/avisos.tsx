@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Ban, Bell, RefreshCw, RotateCcw } from "lucide-react";
+import { Ban, Bell, RefreshCw, RotateCcw, TriangleAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -13,11 +13,11 @@ export const Route = createFileRoute("/admin/avisos")({
   head: () => ({
     meta: [
       { title: "Avisos — Súper Panel" },
-      { name: "description", content: "Clínicas que quedaron suspendidas por falta de pago." },
+      { name: "description", content: "Clínicas suspendidas, mensajes a pacientes sin enviar y eventos de Stripe rechazados." },
       { property: "og:title", content: "Avisos — Súper Panel" },
       {
         property: "og:description",
-        content: "Clínicas que quedaron suspendidas por falta de pago.",
+        content: "Clínicas suspendidas, mensajes a pacientes sin enviar y eventos de Stripe rechazados.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -40,7 +40,7 @@ const dateTime = (iso: string) =>
     minute: "2-digit",
   });
 
-// Fase 6, 6.5: cada vez que una clínica pasa a SUSPENDED (pierde el servicio).
+// Fase 6, 6.5: clínicas que pasan a SUSPENDED. R10.3: mensajes fallidos y eventos de Stripe rechazados.
 function AvisosPage() {
   const qc = useQueryClient();
   const list = useInfiniteQuery({
@@ -76,8 +76,7 @@ function AvisosPage() {
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Clínicas que quedaron suspendidas: su asistente virtual dejó de atender a sus pacientes
-        hasta que regularicen su pago.
+        Clínicas suspendidas, mensajes a pacientes sin enviar y eventos de Stripe rechazados.
         {unread > 0 && <span className="font-semibold text-foreground"> {unread} sin leer.</span>}
       </p>
 
@@ -92,8 +91,9 @@ function AvisosPage() {
 
       <div className="space-y-3">
         {items.map((n) => {
-          const Icon = n.kind === "ACCOUNT_SUSPENDED" ? Ban : n.kind === "DUPLICATE_CHARGE_REFUNDED" ? RotateCcw : Bell;
-          const iconClass = n.kind === "ACCOUNT_SUSPENDED" || (n.kind === "DUPLICATE_CHARGE_REFUNDED" && n.title === "Reembolso manual requerido")
+          const isOperational = n.kind === "MESSAGE_FAILED" || n.kind === "MESSAGE_UNCERTAIN" || n.kind === "INBOUND_FAILED" || n.kind === "STRIPE_EVENT_REJECTED";
+          const Icon = isOperational ? TriangleAlert : n.kind === "ACCOUNT_SUSPENDED" ? Ban : n.kind === "DUPLICATE_CHARGE_REFUNDED" ? RotateCcw : Bell;
+          const iconClass = n.kind === "ACCOUNT_SUSPENDED" || (isOperational && n.kind !== "MESSAGE_UNCERTAIN") || (n.kind === "DUPLICATE_CHARGE_REFUNDED" && n.title === "Reembolso manual requerido")
             ? "text-destructive" : "text-gold";
           return (
           <article
@@ -112,7 +112,7 @@ function AvisosPage() {
                 )}
               </div>
               <p className="mt-1 text-sm font-medium">{n.title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{n.message}</p>
+              <p className="mt-1 break-words text-sm text-muted-foreground">{n.message}</p>
               <p className="mt-1 text-xs text-muted-foreground">{dateTime(n.createdAt)}</p>
             </div>
             {!n.read && (

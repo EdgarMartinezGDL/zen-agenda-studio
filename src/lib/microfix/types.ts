@@ -444,7 +444,11 @@ export type BillingNoticeKind =
   | 'ACCOUNT_SUSPENDED'
   | 'PAYMENT_RECEIVED'
   | 'PRICE_CHANGED'
-  | 'DUPLICATE_CHARGE_REFUNDED';
+  | 'DUPLICATE_CHARGE_REFUNDED'
+  | 'MESSAGE_FAILED'
+  | 'MESSAGE_UNCERTAIN'
+  | 'INBOUND_FAILED'
+  | 'STRIPE_EVENT_REJECTED';
 
 /** Elemento de GET /notifications. Textos ya armados en la zona de la sede. */
 export interface AppNotification {
@@ -675,8 +679,8 @@ export interface KnowledgeDocumentList {
 /** Elemento de GET /admin/billing-notices: una clínica que pasó a SUSPENDED. */
 export interface AdminBillingNotice {
   id: string;
-  kind: BillingNoticeKind; // ACCOUNT_SUSPENDED o DUPLICATE_CHARGE_REFUNDED (cobro duplicado reembolsado / reembolso manual requerido)
-  organizationId: string;
+  kind: BillingNoticeKind;
+  organizationId: string | null; // null en los avisos del sistema: organizationName = "Sistema"
   organizationName: string;
   title: string;
   message: string; // "Clínica X quedó suspendida. Su asistente virtual dejó de atender a sus pacientes."
