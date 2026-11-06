@@ -56,7 +56,7 @@ describe("Super-admin access", () => {
     expect(state.navigate).not.toHaveBeenCalled();
     expect(state.registerWorker).not.toHaveBeenCalled();
   });
-  it.each(["PROFESSIONAL", "ASSISTANT"] as const)("returns %s to / without mounting admin content", async (role) => {
+  it.each(["PROFESSIONAL"] as const)("returns %s to / without mounting admin content", async (role) => {
     state.user = account(role, "org-1");
     render(<AdminShell><Content /></AdminShell>);
     await waitFor(() => expect(state.navigate).toHaveBeenCalledWith({ to: "/" }));
@@ -78,7 +78,6 @@ describe("Super-admin access", () => {
   it.each([
     ["SUPER_ADMIN", null, "/admin"],
     ["PROFESSIONAL", "org-1", "/"],
-    ["ASSISTANT", "org-1", "/"],
   ] as const)("sends %s from login to %s", async (role, org, destination) => {
     state.user = account(role, org);
     const Login = LoginRoute.options.component;

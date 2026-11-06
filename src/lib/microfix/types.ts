@@ -8,7 +8,7 @@
 
 // --- Enums -------------------------------------------------------------------
 
-export type UserRole = 'SUPER_ADMIN' | 'PROFESSIONAL' | 'ASSISTANT';
+export type UserRole = 'SUPER_ADMIN' | 'PROFESSIONAL';
 
 export type AppointmentStatus =
   | 'PENDING' // pendiente (estado con el que nace)
