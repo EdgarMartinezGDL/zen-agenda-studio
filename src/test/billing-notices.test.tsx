@@ -85,7 +85,7 @@ describe("Professional billing notices", () => {
 });
 
 describe("Admin notice permissions and read state", () => {
-  it.each(["PROFESSIONAL", "ASSISTANT"] as const)("blocks %s without requesting notices", async role => {
+  it.each(["PROFESSIONAL"] as const)("blocks %s without requesting notices", async role => {
     state.user = { id: "user-1", fullName: "Test", email: "test@example.test", role, organizationId: "org-1" };
     mountAdmin();
     await waitFor(() => expect(state.navigate).toHaveBeenCalledWith({ to: "/" }));

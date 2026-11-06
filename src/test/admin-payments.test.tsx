@@ -48,7 +48,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); });
 
 describe("Pagos access and clinic history", () => {
-  it.each(["PROFESSIONAL", "ASSISTANT"] as const)("blocks %s before requesting payments", async role => {
+  it.each(["PROFESSIONAL"] as const)("blocks %s before requesting payments", async role => {
     state.user = { ...state.user, id: "user-1", fullName: "Test", email: "test@example.test", role, organizationId: "org-1" };
     mount();
     await waitFor(() => expect(state.navigate).toHaveBeenCalledWith({ to: "/" }));
