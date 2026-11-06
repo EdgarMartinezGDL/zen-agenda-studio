@@ -24,6 +24,10 @@ const BILLING_ICON = {
   PAYMENT_RECEIVED: { Icon: BadgeCheck, className: "text-status-confirmed" },
   PRICE_CHANGED: { Icon: Tag, className: "text-gold" },
   DUPLICATE_CHARGE_REFUNDED: { Icon: RotateCcw, className: "text-status-confirmed" },
+  MESSAGE_FAILED: { Icon: TriangleAlert, className: "text-destructive" },
+  MESSAGE_UNCERTAIN: { Icon: TriangleAlert, className: "text-gold" },
+  INBOUND_FAILED: { Icon: TriangleAlert, className: "text-destructive" },
+  STRIPE_EVENT_REJECTED: { Icon: TriangleAlert, className: "text-destructive" },
 } as const;
 
 // Un tipo que la app aún no conoce no rompe la lista: campana genérica.
