@@ -488,6 +488,14 @@ export interface AdminOrganization {
   createdAt: string;
 }
 
+/** GET /admin/organizations — la organización con su plan y su consumo de IA en una sola respuesta.
+ * Si un cálculo falla, esa parte llega en null y su motivo en errors. */
+export type AdminOrganizationOverview = AdminOrganization & {
+  planFeatures: PlanFeatures | null;
+  aiUsage: AiUsageReport | null;
+  errors?: { planFeatures?: string; aiUsage?: string };
+};
+
 /** GET /organizations/:id/plan-features. NONE = sin plan ni demo activa. */
 export interface PlanFeatures {
   profile: 'PAID' | 'DEMO' | 'NONE';

@@ -8,7 +8,7 @@
 import { apiRequest } from './client';
 import type {
   AdminBillingNoticePage, AdminDemo, ConvertDemoInput, CreateDemoInput, DemoCancelResult, DemoConvertResult, DemoQrResult,
-  AdminOrganization, AiPauseResult, AiUsageReport, PlanChangeResult, PlanFeatures, VerifierRejection,
+  AdminOrganization, AdminOrganizationOverview, AiPauseResult, AiUsageReport, PlanChangeResult, PlanFeatures, VerifierRejection,
   AISettings,
   AppointmentStatus,
   AppointmentWithRelations,
@@ -424,6 +424,8 @@ export const pushApi = {
 export const adminApi = {
   /** Todas las organizaciones, más nuevas primero. */
   organizations: () => apiRequest<AdminOrganization[]>('/organizations'),
+  /** Todas las organizaciones con su plan y su consumo de IA, en una sola llamada (Súper Panel). */
+  organizationsOverview: () => apiRequest<AdminOrganizationOverview[]>('/admin/organizations'),
   /** Plan de la organización (profile PAID/DEMO/NONE y planCode). */
   planFeatures: (orgId: string) => apiRequest<PlanFeatures>(`/organizations/${orgId}/plan-features`),
   /** Consumo de IA del periodo actual. Sin plan → period null y reason NO_ENTITLEMENT. */

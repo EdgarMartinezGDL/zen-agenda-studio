@@ -14,7 +14,7 @@ import { money } from "@/components/SubscriptionCard";
 import { PLANS, planLabel } from "@/lib/admin-ui";
 import { adminApi } from "@/lib/microfix/api";
 import type {
-  AdminOrganization,
+  AdminOrganizationOverview,
   PlanChangeResult,
   PlanExcessItem,
   PlanFeatures,
@@ -76,8 +76,8 @@ function OrganizationsPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ["admin", "organizations"],
-    queryFn: adminApi.organizations,
+    queryKey: ["admin", "organizations", "overview"],
+    queryFn: adminApi.organizationsOverview,
   });
 
   return (
@@ -109,21 +109,22 @@ function OrganizationsPage() {
   );
 }
 
-function OrganizationCard({ org }: { org: AdminOrganization }) {
+function OrganizationCard({ org }: { org: AdminOrganizationOverview }) {
   const queryClient = useQueryClient();
   const [pauseOpen, setPauseOpen] = useState(false);
   const [planCode, setPlanCode] = useState<string>("");
   const [planOpen, setPlanOpen] = useState(false);
   const [planResult, setPlanResult] = useState<PlanChangeResult | null>(null);
 
-  const features = useQuery({
-    queryKey: ["admin", "plan-features", org.id],
-    queryFn: () => adminApi.planFeatures(org.id),
-  });
-  const usage = useQuery({
-    queryKey: ["admin", "ai-usage", org.id],
-    queryFn: () => adminApi.aiUsage(org.id),
-  });
+  // El plan y el consumo llegan con la lista (GET /admin/organizations), sin llamadas por tarjeta.
+  const features = {
+    data: org.planFeatures ?? undefined,
+    error: org.errors?.planFeatures ? new Error(org.errors.planFeatures) : null,
+  };
+  const usage = {
+    data: org.aiUsage ?? undefined,
+    error: org.errors?.aiUsage ? new Error(org.errors.aiUsage) : null,
+  };
 
   const pausedAt = usage.data ? usage.data.aiPausedAt : org.aiPausedAt;
   const paused = !!pausedAt;
@@ -132,8 +133,6 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["admin", "organizations"] });
-    void queryClient.invalidateQueries({ queryKey: ["admin", "plan-features", org.id] });
-    void queryClient.invalidateQueries({ queryKey: ["admin", "ai-usage", org.id] });
   };
 
   const pauseMutation = useMutation({

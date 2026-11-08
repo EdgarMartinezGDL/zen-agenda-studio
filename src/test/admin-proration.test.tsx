@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ organizations: vi.fn(), planFeatures: vi.fn(), aiUsage: vi.fn(), changePlan: vi.fn() }));
+const state = vi.hoisted(() => ({ organizationsOverview: vi.fn(), changePlan: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (options: unknown) => ({ options }) }));
 vi.mock("@/components/AdminShell", () => ({ AdminShell: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock("@/lib/microfix/api", () => ({ adminApi: state }));
@@ -11,9 +11,11 @@ import { Route } from "@/routes/admin/index";
 const clients: QueryClient[] = [];
 beforeEach(() => {
   vi.resetAllMocks();
-  state.organizations.mockResolvedValue([{ id: "org-1", name: "Clínica Zen", createdAt: "2026-10-28T00:00:00Z", aiPausedAt: null }]);
-  state.planFeatures.mockResolvedValue({ profile: "PAID", planCode: "ESSENTIAL" });
-  state.aiUsage.mockResolvedValue({ aiPausedAt: null, period: null });
+  state.organizationsOverview.mockResolvedValue([{
+    id: "org-1", name: "Clínica Zen", createdAt: "2026-10-28T00:00:00Z", aiPausedAt: null,
+    planFeatures: { profile: "PAID", planCode: "ESSENTIAL" },
+    aiUsage: { aiPausedAt: null, period: null },
+  }]);
 });
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); });
 describe("Stripe plan change financial results", () => {
