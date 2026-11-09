@@ -15,6 +15,7 @@
 
 - Super-admin UI uses AdminShell and the adminApi contract separately from AppShell; backend authorization remains enforced by MicroFix Cloud so organization-free sessions never use business branding or device push.
 - Demo management lives in the AdminShell-protected /admin/demos route and uses adminApi exclusively; QR polling stays scoped to its dialog, and conversion credentials remain transient form state to avoid browser persistence.
+- WhatsApp template management and conversion outcomes share WhatsAppTemplates.tsx and adminApi with organization-scoped admin queries so both screens use the same contract.
 
 - Professional plan and documents use organizationApi/knowledgeApi, and paused conversations use pausedApi within AppShell; query keys are organization-scoped so plan gating and refreshes share one source of truth.
 

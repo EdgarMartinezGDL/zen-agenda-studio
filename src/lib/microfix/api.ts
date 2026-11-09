@@ -8,6 +8,7 @@
 import { apiRequest } from './client';
 import type {
   AdminBillingNoticePage, AdminDemo, ConvertDemoInput, CreateDemoInput, DemoCancelResult, DemoConvertResult, DemoQrResult,
+  TemplateRefreshOutcome, TemplateSubmitOutcome, WhatsAppTemplatesOverview,
   AdminOrganization, AdminOrganizationOverview, AiPauseResult, AiUsageReport, PlanChangeResult, PlanFeatures, VerifierRejection,
   AISettings,
   AppointmentStatus,
@@ -457,6 +458,15 @@ export const adminApi = {
   /** Idempotente. */
   markBillingNoticeRead: (id: string) =>
     apiRequest<{ id: string; read: true; readAt: string }>(`/admin/billing-notices/${id}/read`, { method: 'PATCH' }),
+  /** Plantillas de Meta de la organización (E1.2). 404 si no existe. */
+  whatsappTemplates: (orgId: string) =>
+    apiRequest<WhatsAppTemplatesOverview>(`/admin/organizations/${orgId}/whatsapp-templates`),
+  /** Da de alta en YCloud las que faltan. 400 si no está conectada a YCloud (demos). */
+  submitWhatsappTemplates: (orgId: string) =>
+    apiRequest<{ wabaId: string; outcomes: TemplateSubmitOutcome[] }>(`/admin/organizations/${orgId}/whatsapp-templates/submit`, { method: 'POST' }),
+  /** Vuelve a consultar en YCloud el estado de las ya dadas de alta. */
+  refreshWhatsappTemplates: (orgId: string) =>
+    apiRequest<{ wabaId: string; outcomes: TemplateRefreshOutcome[] }>(`/admin/organizations/${orgId}/whatsapp-templates/refresh`, { method: 'POST' }),
 };
 
 // --- Conversaciones en pausa (Fase 5, 5.6.5) ---------------------------------

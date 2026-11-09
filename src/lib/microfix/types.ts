@@ -640,7 +640,42 @@ export interface DemoConvertResult {
   };
   evolutionDeletedAt: string | null;
   evolutionError?: string;
+  /** E1.1: alta automática de las plantillas de Meta al convertir. error = YCloud falló o tardó (la conversión sí quedó). */
+  templates?: { outcomes: TemplateSubmitOutcome[]; error?: string };
 }
+
+// --- Plantillas de Meta por organización (E1.2, solo Súper Admin) ----------------
+
+/** APPROVED = se envía · PENDING = en revisión · MISSING = falta darla de alta · UNUSABLE = rechazada o pausada. */
+export type TemplateSendStatus = 'APPROVED' | 'PENDING' | 'MISSING' | 'UNUSABLE';
+
+export interface WhatsAppTemplateRow {
+  name: string;
+  language: string;
+  sendStatus: TemplateSendStatus;
+  status: string | null;
+  reason: string | null;
+  wabaId: string | null;
+  officialTemplateId: string | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+}
+
+/** GET /admin/organizations/:id/whatsapp-templates. ready = conectada a YCloud con WABA y API key. */
+export interface WhatsAppTemplatesOverview {
+  organizationId: string;
+  wabaId: string | null;
+  ready: boolean;
+  templates: WhatsAppTemplateRow[];
+}
+
+export type TemplateSubmitOutcome =
+  | { name: string; result: 'SUBMITTED' | 'EXISTING'; status: string }
+  | { name: string; result: 'FAILED'; error: string };
+
+export type TemplateRefreshOutcome =
+  | { name: string; result: 'UPDATED'; status: string }
+  | { name: string; result: 'FAILED'; error: string };
 
 // --- Pantallas del profesional (Fase 5, 5.6.5) ---------------------------------
 

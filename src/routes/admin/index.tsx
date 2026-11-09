@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pause, Play, RefreshCw } from "lucide-react";
+import { MessageSquareText, Pause, Play, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
 import { Modal } from "@/components/Modal";
 import { money } from "@/components/SubscriptionCard";
+import { WhatsAppTemplatesModal } from "@/components/WhatsAppTemplates";
 import { PLANS, planLabel } from "@/lib/admin-ui";
 import { adminApi } from "@/lib/microfix/api";
 import type {
@@ -115,6 +116,7 @@ function OrganizationCard({ org }: { org: AdminOrganizationOverview }) {
   const [planCode, setPlanCode] = useState<string>("");
   const [planOpen, setPlanOpen] = useState(false);
   const [planResult, setPlanResult] = useState<PlanChangeResult | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   // El plan y el consumo llegan con la lista (GET /admin/organizations), sin llamadas por tarjeta.
   const features = {
@@ -259,7 +261,24 @@ function OrganizationCard({ org }: { org: AdminOrganizationOverview }) {
             Es una demo: el plan se asigna al convertirla.
           </p>
         )}
+
+        {/* E1.2: plantillas de Meta (WhatsApp oficial) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+          <p className="text-sm text-muted-foreground">Avisos a pacientes por WhatsApp oficial</p>
+          <Button variant="ghost"
+            onClick={() => setTemplatesOpen(true)}
+            className="btn-3d btn-3d-primary flex items-center gap-2 px-3 py-2 text-sm"
+          >
+            <MessageSquareText className="h-4 w-4" />
+            Plantillas de WhatsApp
+          </Button>
+        </div>
       </section>
+
+      <WhatsAppTemplatesModal
+        org={templatesOpen ? { id: org.id, name: org.name } : null}
+        onClose={() => setTemplatesOpen(false)}
+      />
 
       <Confirm
         open={pauseOpen}

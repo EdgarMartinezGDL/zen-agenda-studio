@@ -9,6 +9,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { Banner } from "@/components/Banner";
 import { Confirm } from "@/components/Confirm";
 import { Modal } from "@/components/Modal";
+import { TemplateOutcomes } from "@/components/WhatsAppTemplates";
 import { PLANS, planLabel } from "@/lib/admin-ui";
 import { adminApi } from "@/lib/microfix/api";
 import { ApiError } from "@/lib/microfix/client";
@@ -16,6 +17,7 @@ import type {
   AdminDemo,
   ConvertDemoInput,
   CreateDemoInput,
+  DemoConvertResult,
   DemoQrResult,
   DemoStatus,
 } from "@/lib/microfix/types";
@@ -94,6 +96,7 @@ function DemosPage() {
   );
   const [cancelDemo, setCancelDemo] = useState<AdminDemo | null>(null);
   const [convertDemo, setConvertDemo] = useState<AdminDemo | null>(null);
+  const [converted, setConverted] = useState<{ name: string; result: DemoConvertResult } | null>(null);
 
   const {
     data: demos,
@@ -201,11 +204,39 @@ function DemosPage() {
       <ConvertDemoModal
         demo={convertDemo}
         onClose={() => setConvertDemo(null)}
-        onConverted={() => {
+        onConverted={(result) => {
+          setConverted({ name: convertDemo?.organizationName ?? "La organización", result });
           setConvertDemo(null);
           refresh();
         }}
       />
+
+      {/* E1.1/E1.2: al convertir se dan de alta solas las plantillas de Meta */}
+      <Modal
+        open={!!converted}
+        onClose={() => setConverted(null)}
+        title={`${converted?.name ?? ""} ya es cliente`}
+      >
+        <div className="space-y-3 text-sm">
+          <p className="font-semibold">Alta de plantillas de WhatsApp</p>
+          {converted && (
+            <TemplateOutcomes
+              outcomes={converted.result.templates?.outcomes ?? []}
+              error={converted.result.templates?.error}
+            />
+          )}
+          <p className="text-muted-foreground">
+            Meta revisa las plantillas en hasta 24 h. Sigue su estado, o da de alta las que falten, en
+            Organizaciones → «Plantillas de WhatsApp».
+          </p>
+        </div>
+        <Button variant="ghost"
+          onClick={() => setConverted(null)}
+          className="btn-primary mt-5 w-full px-4 py-2 text-sm"
+        >
+          Entendido
+        </Button>
+      </Modal>
     </div>
   );
 }
@@ -478,7 +509,7 @@ function ConvertDemoModal({
 }: {
   demo: AdminDemo | null;
   onClose: () => void;
-  onConverted: () => void;
+  onConverted: (result: DemoConvertResult) => void;
 }) {
   const [form, setForm] = useState<ConvertDemoInput>(EMPTY_CONVERT);
   const set = (k: keyof ConvertDemoInput) => (e: { target: { value: string } }) =>
@@ -500,7 +531,7 @@ function ConvertDemoModal({
       toast.success(
         `${demo?.organizationName ?? "La demo"} ya es cliente (plan ${planLabel(r.subscription.planCode)}).`,
       );
-      onConverted();
+      onConverted(r);
     },
   });
 

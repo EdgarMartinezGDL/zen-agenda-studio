@@ -1,3 +1,8 @@
+# Plantillas de WhatsApp del Súper Panel
+- [x] Agregar contrato, consulta/alta/actualización por organización y resultados al convertir demos, conservando controles existentes.
+- [x] Verificar regresiones: 28 pruebas existentes aprobadas y compilación correcta.
+- [ ] Verificar lectura, alta, actualización y conversión reales: falta sesión del Súper Admin y dirección pública disponible de MicroFix Cloud.
+
 # Confirmaciones al agendar y reagendar
 - [x] Separar confirmación de horario y aumento de cupo, conservando formulario, botones y zona horaria.
 - [x] Verificar contratos, ambos órdenes de reintento, errores ajenos y limpieza al cambiar fecha/hora y cerrar: 141 pruebas aprobadas; compilación correcta.
